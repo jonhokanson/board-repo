@@ -60,7 +60,7 @@
 </div>
 
 <script>
-const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB"}, {"name": "Saquon Barkley", "pos": "RB"}, {"name": "Christian McCaffrey", "pos": "RB"}, {"name": "Derrick Henry", "pos": "RB"}, {"name": "Ja'Marr Chase", "pos": "WR"}, {"name": "Trey McBride", "pos": "TE"}, {"name": "Jonathan Taylor", "pos": "RB"}, {"name": "Josh Allen", "pos": "QB"}, {"name": "Jahmyr Gibbs", "pos": "RB"}, {"name": "James Cook III", "pos": "RB"}], "protectRow": [null, null, null, null, null, null, null, null, null, null], "bonusRow": [null, null, null, null, null, null, null, null, null, null], "bothProtects": [false, false, false, false, false, false, false, false, false, false], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
+const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB"}, {"name": "Saquon Barkley", "pos": "RB"}, {"name": "Christian McCaffrey", "pos": "RB"}, {"name": "Derrick Henry", "pos": "RB"}, {"name": "Ja'Marr Chase", "pos": "WR"}, {"name": "Trey McBride", "pos": "TE"}, {"name": "Jonathan Taylor", "pos": "RB"}, {"name": "Josh Allen", "pos": "QB"}, {"name": "Jahmyr Gibbs", "pos": "RB"}, {"name": "James Cook III", "pos": "RB"}], "protectRow": [null, null, null, null, null, null, null, null, null, null], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
 
 function hexIsSet(pos) { return STATE.posColors[pos]; }
 
@@ -110,16 +110,10 @@ function renderBoard() {
     tr.appendChild(th);
     STATE.teams.forEach((team, t) => {
       const td = document.createElement('td');
-      if (r === 12 && STATE.bothProtects[t]) {
-        td.className = 'pick protect-row bonus';
-        applyPosStyle(td, STATE.bonusRow[t]);
-        td.innerHTML = cellInner('Bonus protect', STATE.bonusRow[t]);
-      } else {
-        td.className = 'pick';
-        const entry = STATE.picksGrid[r-1][t];
-        applyPosStyle(td, entry);
-        td.innerHTML = cellInner('#' + overallPick(r, t, STATE.teams.length), entry);
-      }
+      td.className = 'pick';
+      const entry = STATE.picksGrid[r-1][t];
+      applyPosStyle(td, entry);
+      td.innerHTML = cellInner('#' + overallPick(r, t, STATE.teams.length), entry);
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
