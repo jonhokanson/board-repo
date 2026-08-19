@@ -14,8 +14,11 @@
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); padding:24px; }
   .wrap { max-width:1200px; margin:0 auto; }
   h1 { font-size:22px; margin:0 0 4px 0; font-weight:700; }
+  .home-link { color:inherit; text-decoration:none; }
+  .home-link:hover { color:var(--accent); text-decoration:underline; }
   .sub { color:var(--text-dim); font-size:13px; margin-bottom:6px; }
-  .nav-link { display:inline-block; margin-top:10px; margin-bottom:18px; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
+  .nav-links { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; margin-bottom:18px; }
+  .nav-link { display:inline-block; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
   .search-wrap { position:relative; width:100%; max-width:360px; margin-bottom:20px; }
   #search { width:100%; padding:9px 32px 9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:14px; box-sizing:border-box; }
   #search::placeholder { color:var(--text-dim); }
@@ -65,9 +68,12 @@
 <body>
 <div class="wrap">
 <div style="background:#f5a623;color:#241a00;font-weight:700;text-align:center;padding:8px 12px;border-radius:8px;margin-bottom:16px;font-size:13px;letter-spacing:.02em;">🎲 MOCK DRAFT &mdash; for demo purposes only. All 10 teams&#39; Keep/Protect are real; every live pick shown (rounds 1&ndash;3) is a simulated guess for planning purposes.</div>
-  <h1>TBML 2026 MOCK -- Available Players (After 3 Rounds)</h1>
+  <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 MOCK -- Available Players (After 3 Rounds)</h1>
   <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Player names link directly to that player's Yahoo Sports page where a real ID has been looked up; everyone else falls back to a Yahoo Sports search link. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
-  <a class="nav-link" href="mock-draft-board.html">&larr; Back to draft board</a>
+  <div class="nav-links">
+    <a class="nav-link" href="mock-draft-board.html">&larr; Back to draft board</a>
+    <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
+  </div>
 
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
