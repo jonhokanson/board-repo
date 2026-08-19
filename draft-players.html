@@ -42,7 +42,9 @@
   .toggle-all { font-size:12px; color:var(--accent); background:none; border:1px solid var(--accent); border-radius:6px; padding:4px 10px; cursor:pointer; margin-left:10px; }
   .hide-toggle { font-size:12px; color:var(--text-dim); background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; margin-bottom:14px; }
   .hide-toggle.active { color:var(--protect); border-color:var(--protect); background:rgba(245,166,35,0.1); }
-  .tabs { display:flex; gap:8px; margin:14px 0 18px; }
+  .tabs { display:flex; align-items:center; gap:8px; margin:14px 0 18px; }
+  .refresh-toggle { margin-left:auto; font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+  .refresh-toggle input { cursor:pointer; }
   .tab-btn { font-size:13px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 16px; cursor:pointer; }
   .tab-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-bg,rgba(59,167,255,0.1)); }
   .tab-panel { display:none; }
@@ -65,6 +67,7 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
     <button class="tab-btn" id="tabBtnOverall">Overall Ranking</button>
+    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh (15s)</label>
   </div>
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
@@ -195,8 +198,17 @@ function renderActiveTab() {
   if (activeTab === 'overall') renderOverall(q); else render(q);
 }
 
-let activeTab = 'byPos';
-let hideUnavailable = false;
+// Auto-refresh reloads the whole page, which would normally reset which tab
+// you're on and whether "hide unavailable" is active. To survive that, both
+// get stashed in the URL hash (not localStorage -- keeps this a plain static
+// file with no storage APIs) and restored on load instead of defaulting.
+const hashParams = new URLSearchParams(location.hash.slice(1));
+let activeTab = hashParams.get('tab') === 'overall' ? 'overall' : 'byPos';
+let hideUnavailable = hashParams.get('hide') === '1';
+
+function syncHash() {
+  history.replaceState(null, '', '#tab=' + activeTab + '&hide=' + (hideUnavailable ? '1' : '0'));
+}
 
 document.getElementById('search').addEventListener('input', renderActiveTab);
 
@@ -213,6 +225,7 @@ function setHideUnavailable(val) {
     btn.classList.toggle('active', hideUnavailable);
     btn.textContent = hideUnavailable ? 'Show unavailable' : 'Hide unavailable';
   });
+  syncHash();
   renderActiveTab();
 }
 document.getElementById('hideToggleByPos').addEventListener('click', () => setHideUnavailable(!hideUnavailable));
@@ -225,18 +238,27 @@ function setTab(tab) {
   document.getElementById('panelByPos').classList.toggle('active', tab === 'byPos');
   document.getElementById('panelOverall').classList.toggle('active', tab === 'overall');
   document.getElementById('toggleAll').style.display = tab === 'byPos' ? '' : 'none';
+  syncHash();
   renderActiveTab();
 }
 document.getElementById('tabBtnByPos').addEventListener('click', () => setTab('byPos'));
 document.getElementById('tabBtnOverall').addEventListener('click', () => setTab('overall'));
 
-render('');
-renderOverall('');
+// Apply whatever tab/hide state was restored from the hash (or the defaults)
+// before the first render, so a reload lands back where you left off.
+setHideUnavailable(hideUnavailable);
+setTab(activeTab);
 
 // Auto-refresh so the list stays current without a manual reload -- matches
-// the ~15s cadence the server pulls updates on.
+// the ~15s cadence the server pulls updates on. Checkbox-gated: unticking it
+// just stops the next tick from reloading, no page state is lost either way
+// since tab/hide are restored from the URL hash above.
 const AUTO_REFRESH_SECONDS = 15;
-setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
+let autoRefreshEnabled = true;
+document.getElementById('autoRefreshToggle').addEventListener('change', e => {
+  autoRefreshEnabled = e.target.checked;
+});
+setInterval(() => { if (autoRefreshEnabled) location.reload(); }, AUTO_REFRESH_SECONDS * 1000);
 </script>
 </body>
 </html>
