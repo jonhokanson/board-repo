@@ -19,16 +19,6 @@
   .sub { color:var(--text-dim); font-size:13px; }
   .updated { color:var(--text-dim); font-size:12px; margin-top:6px; }
   .nav-link { display:inline-block; margin-top:10px; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
-  .kp-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:24px; }
-  @media (max-width:1100px) { .kp-grid { grid-template-columns:repeat(2,1fr); } }
-  .kp-card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
-  .kp-team { font-size:13px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
-  .kp-slot { font-size:12px; color:var(--text-dim); margin-top:4px; }
-  .kp-slot .name { color:var(--text); font-weight:500; }
-  .kp-slot .name.pending { color:var(--text-dim); font-style:italic; }
-  .tag { font-size:10px; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:5px; font-weight:700; }
-  .tag.keep { background:var(--keep-bg); color:var(--keep); }
-  .tag.protect { background:var(--protect-bg); color:var(--protect); }
   .board-scroll { overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); }
   table { border-collapse:collapse; width:100%; min-width:1200px; }
   th,td { border-bottom:1px solid var(--border); border-right:1px solid var(--border); padding:0; text-align:left; }
@@ -44,7 +34,6 @@
   .pick-player { font-size:13px; margin-top:3px; color:var(--empty); }
   .pick-player.filled { color:#0b0f14; font-weight:700; }
   .pick-player.pending { font-style:italic; }
-  footer { margin-top:16px; color:var(--text-dim); font-size:12px; line-height:1.6; }
   .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
   .legend-item { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }
   .legend .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
@@ -59,8 +48,6 @@
     <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
   </header>
 
-  <div class="kp-grid" id="kp-grid"></div>
-
   <div class="board-scroll">
     <table id="board">
       <thead><tr id="board-head"><th class="round-col">Rnd</th></tr></thead>
@@ -69,10 +56,6 @@
   </div>
 
   <div class="legend" id="legend"></div>
-
-  <footer>
-    Rounds 1&ndash;12 are live snake picks for every team &mdash; <strong>except</strong> Round 12 for a team that lands both of its protected players, which becomes their bonus protect slot instead of a live pick. Rounds 13&ndash;14 are always-reserved: <strong>Round 14</strong> = each team's free Keep. <strong>Round 13</strong> = the Protect player every team is guaranteed to end up with.
-  </footer>
 </div>
 
 <script>
@@ -106,20 +89,6 @@ function renderHead() {
     th.className = 'team-col';
     th.textContent = t;
     tr.appendChild(th);
-  });
-}
-
-function renderKpGrid() {
-  const el = document.getElementById('kp-grid');
-  STATE.teams.forEach((t, i) => {
-    const keep = STATE.keepRow[i];
-    const div = document.createElement('div');
-    div.className = 'kp-card';
-    div.innerHTML = `
-      <div class="kp-team">${t}<span class="tag" style="background:var(--panel-2);color:var(--text-dim)">#${i+1}</span></div>
-      <div class="kp-slot"><span class="tag keep">Keep</span> <span class="name${keep ? '' : ' pending'}">${keep ? keep.name : 'TBD'}</span></div>
-    `;
-    el.appendChild(div);
   });
 }
 
@@ -183,7 +152,6 @@ setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
 
 document.getElementById('updated').textContent = 'Last updated: ' + (STATE.picksGrid.flat().filter(Boolean).length ? (STATE.picksGrid.flat().filter(Boolean).length + ' live picks made') : 'pre-draft, no live picks yet') + ' · auto-refreshing every ' + AUTO_REFRESH_SECONDS + 's';
 renderHead();
-renderKpGrid();
 renderLegend();
 renderBoard();
 </script>
