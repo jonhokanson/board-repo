@@ -18,7 +18,8 @@
   h1 { font-size:22px; margin:0; font-weight:700; letter-spacing:-0.01em; }
   .header-top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .updated { color:var(--text-dim); font-size:12px; white-space:nowrap; }
-  .nav-link { display:inline-block; margin-top:10px; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
+  .nav-links { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .nav-link { display:inline-block; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
   .board-scroll { overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); }
   table { border-collapse:collapse; width:100%; min-width:1200px; }
   th,td { border-bottom:1px solid var(--border); border-right:1px solid var(--border); padding:0; text-align:left; }
@@ -46,7 +47,10 @@
       <h1>TBML 2026 Draft Board</h1>
       <div class="updated" id="updated"></div>
     </div>
-    <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
+    <div class="nav-links">
+      <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
+      <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
+    </div>
   </header>
 
   <div class="board-scroll">
