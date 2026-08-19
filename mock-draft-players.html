@@ -16,8 +16,12 @@
   h1 { font-size:22px; margin:0 0 4px 0; font-weight:700; }
   .sub { color:var(--text-dim); font-size:13px; margin-bottom:6px; }
   .nav-link { display:inline-block; margin-top:10px; margin-bottom:18px; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }
-  #search { width:100%; max-width:360px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:14px; margin-bottom:20px; }
+  .search-wrap { position:relative; width:100%; max-width:360px; margin-bottom:20px; }
+  #search { width:100%; padding:9px 32px 9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:14px; box-sizing:border-box; }
   #search::placeholder { color:var(--text-dim); }
+  #searchClear { display:none; position:absolute; right:6px; top:50%; transform:translateY(-50%); width:22px; height:22px; border:none; border-radius:50%; background:transparent; color:var(--text-dim); font-size:16px; line-height:1; cursor:pointer; align-items:center; justify-content:center; }
+  #searchClear:hover { background:var(--panel-2); color:var(--text); }
+  #searchClear.visible { display:flex; }
   .pos-section { margin-bottom:14px; border:1px solid var(--border); border-radius:10px; background:var(--panel); overflow:hidden; }
   .pos-head { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; user-select:none; }
   .pos-head:hover { background:var(--panel-2); }
@@ -73,7 +77,10 @@
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
   <br>
-  <input id="search" type="text" placeholder="Filter by player or team...">
+  <div class="search-wrap">
+    <input id="search" type="text" placeholder="Filter by player or team...">
+    <button id="searchClear" type="button" aria-label="Clear search">&times;</button>
+  </div>
 
   <div class="tab-panel active" id="panelByPos">
     <br>
@@ -196,6 +203,7 @@ function renderOverall(filterText) {
 
 function renderActiveTab() {
   const q = document.getElementById('search').value;
+  document.getElementById('searchClear').classList.toggle('visible', q.length > 0);
   if (activeTab === 'overall') renderOverall(q); else render(q);
 }
 
@@ -212,6 +220,13 @@ function syncHash() {
 }
 
 document.getElementById('search').addEventListener('input', renderActiveTab);
+
+document.getElementById('searchClear').addEventListener('click', () => {
+  const input = document.getElementById('search');
+  input.value = '';
+  input.focus();
+  renderActiveTab();
+});
 
 document.getElementById('toggleAll').addEventListener('click', () => {
   const anyExpanded = DATA.posOrder.some(pos => !collapsedState[pos]);
