@@ -22,7 +22,6 @@
   .kp-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:24px; }
   @media (max-width:1100px) { .kp-grid { grid-template-columns:repeat(2,1fr); } }
   .kp-card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
-  .kp-card.mine { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
   .kp-team { font-size:13px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
   .kp-slot { font-size:12px; color:var(--text-dim); margin-top:4px; }
   .kp-slot .name { color:var(--text); font-weight:500; }
@@ -30,20 +29,16 @@
   .tag { font-size:10px; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:5px; font-weight:700; }
   .tag.keep { background:var(--keep-bg); color:var(--keep); }
   .tag.protect { background:var(--protect-bg); color:var(--protect); }
-  .tag.mine { background:var(--accent-bg); color:var(--accent); }
   .board-scroll { overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--panel); }
   table { border-collapse:collapse; width:100%; min-width:1200px; }
   th,td { border-bottom:1px solid var(--border); border-right:1px solid var(--border); padding:0; text-align:left; }
   th:last-child, td:last-child { border-right:none; }
   thead th { background:var(--panel-2); padding:10px 12px; font-size:12px; font-weight:700; position:sticky; top:0; z-index:2; }
   thead th.round-col { width:64px; text-align:center; color:var(--text-dim); }
-  thead th.team-col.mine { color:var(--accent); background:var(--accent-bg); }
   tbody th.round-col { background:var(--panel-2); color:var(--text-dim); font-size:11px; text-align:center; padding:8px 4px; position:sticky; left:0; line-height:1.3; }
   tbody tr.reserved.keep-row th.round-col { color:var(--keep); font-weight:700; }
   tbody tr.reserved.protect-row th.round-col { color:var(--protect); font-weight:700; }
   td.pick { padding:8px 10px; vertical-align:top; min-width:118px; }
-  td.pick.mine { box-shadow:inset 0 0 0 1px var(--accent); }
-  td.pick.pos-filled.mine { box-shadow:inset 0 0 0 2px var(--accent); }
   .pick-num { font-size:10px; color:var(--text-dim); font-weight:600; }
   .pos-filled .pick-num { color:rgba(11,15,20,.6); }
   .pick-player { font-size:13px; margin-top:3px; color:var(--empty); }
@@ -59,7 +54,7 @@
 <div class="wrap">
   <header>
     <h1>TBML 2026 Draft Board</h1>
-    <div class="sub">Ted Brown Memorial League (TBML) &middot; 10-team snake, offline/paper draft &middot; Draft day: Saturday, Aug 29, 2026 &middot; Your slot: <strong style="color:var(--accent)">#4 — Just The Tip</strong></div>
+    <div class="sub">Ted Brown Memorial League (TBML) &middot; 10-team snake, offline/paper draft &middot; Draft day: Saturday, Aug 29, 2026</div>
     <div class="updated" id="updated"></div>
     <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
   </header>
@@ -108,8 +103,8 @@ function renderHead() {
   const tr = document.getElementById('board-head');
   STATE.teams.forEach((t, i) => {
     const th = document.createElement('th');
-    th.className = 'team-col' + (i === STATE.myIndex ? ' mine' : '');
-    th.textContent = t + (i === STATE.myIndex ? ' (you)' : '');
+    th.className = 'team-col';
+    th.textContent = t;
     tr.appendChild(th);
   });
 }
@@ -117,12 +112,11 @@ function renderHead() {
 function renderKpGrid() {
   const el = document.getElementById('kp-grid');
   STATE.teams.forEach((t, i) => {
-    const mine = i === STATE.myIndex;
     const keep = STATE.keepRow[i];
     const div = document.createElement('div');
-    div.className = 'kp-card' + (mine ? ' mine' : '');
+    div.className = 'kp-card';
     div.innerHTML = `
-      <div class="kp-team">${t}${mine ? ' <span class=\"tag mine\">YOU</span>' : ` <span class="tag" style="background:var(--panel-2);color:var(--text-dim)">#${i+1}</span>`}</div>
+      <div class="kp-team">${t}<span class="tag" style="background:var(--panel-2);color:var(--text-dim)">#${i+1}</span></div>
       <div class="kp-slot"><span class="tag keep">Keep</span> <span class="name${keep ? '' : ' pending'}">${keep ? keep.name : 'TBD'}</span></div>
     `;
     el.appendChild(div);
@@ -146,13 +140,12 @@ function renderBoard() {
     tr.appendChild(th);
     STATE.teams.forEach((team, t) => {
       const td = document.createElement('td');
-      const isMine = t === STATE.myIndex;
       if (r === 12 && STATE.bothProtects[t]) {
-        td.className = 'pick' + (isMine ? ' mine' : '') + ' protect-row bonus';
+        td.className = 'pick protect-row bonus';
         applyPosStyle(td, STATE.bonusRow[t]);
         td.innerHTML = cellInner('Bonus protect', STATE.bonusRow[t]);
       } else {
-        td.className = 'pick' + (isMine ? ' mine' : '');
+        td.className = 'pick';
         const entry = STATE.picksGrid[r-1][t];
         applyPosStyle(td, entry);
         td.innerHTML = cellInner('#' + overallPick(r, t, STATE.teams.length), entry);
@@ -174,7 +167,7 @@ function renderBoard() {
     tr.appendChild(th);
     STATE.teams.forEach((team, t) => {
       const td = document.createElement('td');
-      td.className = 'pick' + (t === STATE.myIndex ? ' mine' : '');
+      td.className = 'pick';
       applyPosStyle(td, rr.data[t]);
       td.innerHTML = cellInner(rr.label, rr.data[t]);
       tr.appendChild(td);
