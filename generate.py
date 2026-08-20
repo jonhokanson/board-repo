@@ -464,7 +464,8 @@ def render_available_players(pool, derived):
   .modal-header {{ position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; overflow:hidden; }}
   .modal-header-logo {{ position:absolute; top:50%; right:-10px; transform:translateY(-50%); width:130px; height:130px; object-fit:contain; opacity:0.55; pointer-events:none; filter:drop-shadow(0 0 10px rgba(0,0,0,0.35)); }}
   .modal-header > *:not(.modal-header-logo) {{ position:relative; z-index:1; }}
-  .modal-avatar {{ flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; }}
+  .modal-avatar {{ flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; overflow:hidden; }}
+  .modal-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
   .modal-chip {{ display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }}
   .modal-header-name {{ font-size:19px; font-weight:800; line-height:1.15; }}
   .modal-teambar {{ background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }}
@@ -475,6 +476,7 @@ def render_available_players(pool, derived):
   .stat-pill {{ flex:1; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:9px 6px; text-align:center; }}
   .stat-pill .label {{ font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:4px; }}
   .stat-pill .value {{ font-size:14.5px; font-weight:800; }}
+  .bio-pills .stat-pill .value {{ font-size:13px; }}
   .modal-status-detail {{ font-size:12.5px; color:var(--text-dim); text-align:center; margin-bottom:14px; }}
   .modal-link {{ display:block; text-align:center; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:9px 14px; border-radius:8px; }}
   .modal-link:hover {{ background:rgba(59,167,255,0.1); }}
@@ -619,16 +621,90 @@ function initials(name) {{
   return (first + last).toUpperCase();
 }}
 
+// --- Sleeper bio/photo lookup ---------------------------------------------
+// Sleeper's player API (api.sleeper.app) is public/no-auth but only offers a
+// single "give me every NFL player" endpoint -- ~5MB, no per-player lookup.
+// Their own docs say not to call it more than once/day, so this fetches it
+// at most that often, trims it down to just what the modal needs, and caches
+// the trimmed result in localStorage (this is a real deployed site, not a
+// Claude.ai artifact, so localStorage is fine to use here). Everything here
+// is wrapped so a failure -- offline, CORS, a name that doesn't match, no
+// cached data yet -- just means the modal keeps showing today's initials
+// avatar and skips the bio row. Nothing about the existing modal depends on
+// this succeeding.
+const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v1';
+const SLEEPER_MAX_AGE_MS = 20 * 60 * 60 * 1000; // under Sleeper's "once/day" guidance
+let sleeperDataPromise = null;
+
+function normalizeName(name) {{
+  return String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+}}
+
+async function fetchSleeperPlayers() {{
+  const res = await fetch('https://api.sleeper.app/v1/players/nfl');
+  if (!res.ok) throw new Error('Sleeper fetch failed: ' + res.status);
+  const raw = await res.json();
+  const trimmed = {{}};
+  for (const id in raw) {{
+    const pl = raw[id];
+    if (!pl || !pl.search_full_name) continue;
+    trimmed[pl.search_full_name] = {{
+      id: pl.player_id,
+      age: pl.age || null,
+      height: pl.height || null,
+      weight: pl.weight || null,
+      exp: (pl.years_exp === undefined || pl.years_exp === null) ? null : pl.years_exp,
+    }};
+  }}
+  return trimmed;
+}}
+
+// Loads once per page (in-memory), refreshed from network at most once/day
+// (localStorage). Returns {{}} rather than throwing if anything goes wrong,
+// so callers never need their own try/catch.
+function getSleeperData() {{
+  if (sleeperDataPromise) return sleeperDataPromise;
+  sleeperDataPromise = (async () => {{
+    let cached = null;
+    try {{ cached = JSON.parse(localStorage.getItem(SLEEPER_CACHE_KEY)); }} catch (e) {{ /* corrupt/missing cache -- refetch */ }}
+    if (cached && cached.fetchedAt && (Date.now() - cached.fetchedAt) < SLEEPER_MAX_AGE_MS && cached.players) {{
+      return cached.players;
+    }}
+    try {{
+      const players = await fetchSleeperPlayers();
+      try {{ localStorage.setItem(SLEEPER_CACHE_KEY, JSON.stringify({{fetchedAt: Date.now(), players}})); }} catch (e) {{ /* storage full/unavailable -- still usable this page load */ }}
+      return players;
+    }} catch (e) {{
+      return (cached && cached.players) || {{}}; // network/CORS failure -- fall back to stale cache if we have one
+    }}
+  }})();
+  return sleeperDataPromise;
+}}
+
+function formatHeight(totalInches) {{
+  const n = parseInt(totalInches, 10);
+  if (!n) return null;
+  return `${{Math.floor(n / 12)}}'${{n % 12}}"`;
+}}
+
+function formatExp(years) {{
+  if (years === null || years === undefined) return null;
+  return years === 0 ? 'Rookie' : `${{years}} yr${{years === 1 ? '' : 's'}}`;
+}}
+
+let currentModalPlayer = null;
+
 function openPlayerModal(name) {{
   const p = DATA.pool.find(x => x.name === name);
   if (!p) return;
+  currentModalPlayer = name;
   const team = TEAM_STYLE[p.nflTeam] || TEAM_STYLE_FALLBACK;
   const rankLabel = p.rank ? `${{p.pos}}${{p.rank}}` : '&mdash;';
   const ovrLabel = p.overallRank ? `#${{p.overallRank}}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-header" style="background:linear-gradient(rgba(15,23,32,0.55), rgba(15,23,32,0.55)), linear-gradient(135deg, ${{team.primary}}, ${{team.secondary}})">
       ${{team.logo ? `<img class="modal-header-logo" src="${{team.logo}}" alt="" onerror="this.remove()">` : ''}}
-      <div class="modal-avatar">${{initials(p.name)}}</div>
+      <div class="modal-avatar" id="modalAvatar">${{initials(p.name)}}</div>
       <div>
         <div class="modal-chip">${{statusChip(p)}}</div>
         <div class="modal-header-name" id="modalName">${{p.name}}</div>
@@ -643,14 +719,51 @@ function openPlayerModal(name) {{
         <div class="stat-pill"><div class="label">Pos rank</div><div class="value">${{rankLabel}}</div></div>
         <div class="stat-pill"><div class="label">Overall</div><div class="value">${{ovrLabel}}</div></div>
       </div>
+      <div class="stat-pills bio-pills" id="bioPills" style="display:none;"></div>
       <div class="modal-status-detail">${{statusLine(p)}}</div>
       <a class="modal-link" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
+
+  // Team defenses don't have a meaningful bio -- skip the lookup entirely.
+  if (p.pos === 'DEF') return;
+
+  getSleeperData().then(players => {{
+    if (currentModalPlayer !== name) return; // modal moved on to someone else (or closed) while this was loading
+    const info = players[normalizeName(p.name)];
+    if (!info) return; // no match -- initials avatar + no bio row stays as-is, silently
+
+    if (info.id) {{
+      const avatarEl = document.getElementById('modalAvatar');
+      if (avatarEl) {{
+        // data-fallback (not an inline JSON literal) so the initials string
+        // can't collide with the onerror attribute's own quoting -- a name
+        // producing a stray `"` there would otherwise break the markup.
+        avatarEl.innerHTML = `<img src="https://sleepercdn.com/content/nfl/players/${{info.id}}.jpg" alt="" data-fallback="${{escAttr(initials(p.name))}}" onerror="this.parentElement.textContent=this.dataset.fallback">`;
+      }}
+    }}
+
+    const bioStats = [
+      ['Age', info.age || null],
+      ['Height', formatHeight(info.height)],
+      ['Weight', info.weight ? `${{info.weight}} lbs` : null],
+      ['Exp', formatExp(info.exp)],
+    ].filter(([, v]) => v);
+    if (bioStats.length) {{
+      const bioEl = document.getElementById('bioPills');
+      if (bioEl) {{
+        bioEl.innerHTML = bioStats.map(([label, value]) =>
+          `<div class="stat-pill"><div class="label">${{label}}</div><div class="value">${{value}}</div></div>`
+        ).join('');
+        bioEl.style.display = '';
+      }}
+    }}
+  }}); // deliberately no .catch() -- getSleeperData() never rejects, it resolves to {{}} on any failure
 }}
 
 function closePlayerModal() {{
+  currentModalPlayer = null;
   document.getElementById('modalOverlay').classList.remove('open');
 }}
 
