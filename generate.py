@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.2"
+APP_VERSION = "0.2.1.3"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -777,6 +777,7 @@ function openPlayerModal(name) {{
       <div class="modal-college" id="modalCollege" style="display:none;"></div>
       <div class="modal-status-detail">${{statusLine(p)}}</div>
       <a class="modal-link" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+      <a class="modal-link" id="modalSleeperLink" href="#" target="_blank" rel="noopener" style="display:none; margin-top:8px;">View on Sleeper &#8599;</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
@@ -796,6 +797,11 @@ function openPlayerModal(name) {{
         // can't collide with the onerror attribute's own quoting -- a name
         // producing a stray `"` there would otherwise break the markup.
         avatarEl.innerHTML = `<img src="https://sleepercdn.com/content/nfl/players/${{info.id}}.jpg" alt="" data-fallback="${{escAttr(initials(p.name))}}" onerror="this.parentElement.textContent=this.dataset.fallback">`;
+      }}
+      const sleeperLinkEl = document.getElementById('modalSleeperLink');
+      if (sleeperLinkEl) {{
+        sleeperLinkEl.href = `https://sleeper.com/nfl/players/${{info.id}}`;
+        sleeperLinkEl.style.display = '';
       }}
     }}
 
