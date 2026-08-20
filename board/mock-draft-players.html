@@ -65,16 +65,23 @@
   .overall-table .pos-badge { font-size:10.5px; padding:2px 7px; }
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; z-index:1000; padding:20px; }
   .modal-overlay.open { display:flex; }
-  .modal-panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px 24px; max-width:420px; width:100%; position:relative; box-shadow:0 12px 40px rgba(0,0,0,0.5); }
-  .modal-close { position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--panel-2); color:var(--text-dim); font-size:18px; cursor:pointer; line-height:1; }
-  .modal-close:hover { color:var(--text); background:var(--border); }
-  .modal-name { font-size:19px; font-weight:800; margin:0 0 8px; padding-right:24px; }
-  .modal-sub { font-size:13px; color:var(--text-dim); margin-bottom:14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .modal-row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--border); font-size:13.5px; }
-  .modal-row:first-of-type { border-top:none; }
-  .modal-row .k { color:var(--text-dim); }
-  .modal-row .v { font-weight:600; text-align:right; }
-  .modal-link { display:inline-block; margin-top:16px; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:7px 14px; border-radius:8px; }
+  .modal-panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; max-width:420px; width:100%; position:relative; box-shadow:0 12px 40px rgba(0,0,0,0.5); overflow:hidden; }
+  .modal-close { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; border:none; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); color:#fff; font-size:18px; cursor:pointer; line-height:1; z-index:2; }
+  .modal-close:hover { background:rgba(0,0,0,0.55); }
+  .modal-header { position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; }
+  .modal-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; }
+  .modal-chip { display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }
+  .modal-header-name { font-size:19px; font-weight:800; line-height:1.15; }
+  .modal-teambar { background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }
+  .modal-team-name { font-weight:700; font-size:13px; letter-spacing:.01em; }
+  .modal-team-detail { font-size:11.5px; color:var(--text-dim); }
+  .modal-body-content { padding:16px 20px 20px; }
+  .stat-pills { display:flex; gap:8px; margin-bottom:14px; }
+  .stat-pill { flex:1; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:9px 6px; text-align:center; }
+  .stat-pill .label { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:4px; }
+  .stat-pill .value { font-size:14.5px; font-weight:800; }
+  .modal-status-detail { font-size:12.5px; color:var(--text-dim); text-align:center; margin-bottom:14px; }
+  .modal-link { display:block; text-align:center; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:9px 14px; border-radius:8px; }
   .modal-link:hover { background:rgba(59,167,255,0.1); }
 </style>
 </head>
@@ -162,21 +169,86 @@ function statusLine(p) {
   return 'Available';
 }
 
+function statusChip(p) {
+  if (p.status === 'kept') return 'Kept';
+  if (p.status === 'picked') return 'Picked';
+  if (p.status === 'protected') return 'Guaranteed R13';
+  return 'Available';
+}
+
+// Brand colors are approximate, just for a header gradient -- not sourced
+// from an API, and easy to touch up later. Every NFL team is covered so
+// there's always a real gradient; TEAM_STYLE_FALLBACK only kicks in if a
+// pool entry's nflTeam string somehow doesn't match one of these exactly.
+const TEAM_STYLE = {
+  "Arizona Cardinals": {primary:"#97233F", secondary:"#000000", abbr:"ARI"},
+  "Atlanta Falcons": {primary:"#A71930", secondary:"#000000", abbr:"ATL"},
+  "Baltimore Ravens": {primary:"#241773", secondary:"#000000", abbr:"BAL"},
+  "Buffalo Bills": {primary:"#00338D", secondary:"#C60C30", abbr:"BUF"},
+  "Carolina Panthers": {primary:"#0085CA", secondary:"#101820", abbr:"CAR"},
+  "Chicago Bears": {primary:"#0B162A", secondary:"#C83803", abbr:"CHI"},
+  "Cincinnati Bengals": {primary:"#FB4F14", secondary:"#000000", abbr:"CIN"},
+  "Cleveland Browns": {primary:"#472A08", secondary:"#FF3C00", abbr:"CLE"},
+  "Dallas Cowboys": {primary:"#041E42", secondary:"#869397", abbr:"DAL"},
+  "Denver Broncos": {primary:"#FB4F14", secondary:"#002244", abbr:"DEN"},
+  "Detroit Lions": {primary:"#0076B6", secondary:"#5A6266", abbr:"DET"},
+  "Green Bay Packers": {primary:"#203731", secondary:"#FFB612", abbr:"GB"},
+  "Houston Texans": {primary:"#03202F", secondary:"#A71930", abbr:"HOU"},
+  "Indianapolis Colts": {primary:"#002C5F", secondary:"#A5ACAF", abbr:"IND"},
+  "Jacksonville Jaguars": {primary:"#006778", secondary:"#101820", abbr:"JAX"},
+  "Kansas City Chiefs": {primary:"#E31837", secondary:"#FFB612", abbr:"KC"},
+  "Las Vegas Raiders": {primary:"#A5ACAF", secondary:"#000000", abbr:"LV"},
+  "Los Angeles Chargers": {primary:"#0080C6", secondary:"#FFC20E", abbr:"LAC"},
+  "Los Angeles Rams": {primary:"#003594", secondary:"#FFA300", abbr:"LAR"},
+  "Miami Dolphins": {primary:"#008E97", secondary:"#F58220", abbr:"MIA"},
+  "Minnesota Vikings": {primary:"#4F2683", secondary:"#FFC62F", abbr:"MIN"},
+  "New England Patriots": {primary:"#002244", secondary:"#C60C30", abbr:"NE"},
+  "New Orleans Saints": {primary:"#9F8458", secondary:"#101820", abbr:"NO"},
+  "New York Giants": {primary:"#0B2265", secondary:"#A71930", abbr:"NYG"},
+  "New York Jets": {primary:"#125740", secondary:"#000000", abbr:"NYJ"},
+  "Philadelphia Eagles": {primary:"#004C54", secondary:"#A5ACAF", abbr:"PHI"},
+  "Pittsburgh Steelers": {primary:"#FFB612", secondary:"#101820", abbr:"PIT"},
+  "San Francisco 49ers": {primary:"#AA0000", secondary:"#B3995D", abbr:"SF"},
+  "Seattle Seahawks": {primary:"#002244", secondary:"#69BE28", abbr:"SEA"},
+  "Tampa Bay Buccaneers": {primary:"#D50A0A", secondary:"#34302B", abbr:"TB"},
+  "Tennessee Titans": {primary:"#0C2340", secondary:"#4B92DB", abbr:"TEN"},
+  "Washington Commanders": {primary:"#5A1414", secondary:"#FFB612", abbr:"WSH"},
+};
+const TEAM_STYLE_FALLBACK = {primary:"#2a3a48", secondary:"#16212c", abbr:""};
+
+function initials(name) {
+  const parts = name.split(' ').filter(Boolean);
+  const first = parts[0] ? parts[0][0] : '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
 function openPlayerModal(name) {
   const p = DATA.pool.find(x => x.name === name);
   if (!p) return;
+  const team = TEAM_STYLE[p.nflTeam] || TEAM_STYLE_FALLBACK;
   const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
-  const ovrLabel = p.overallRank ? `#${p.overallRank} overall` : 'Unranked';
+  const ovrLabel = p.overallRank ? `#${p.overallRank}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
-    <div class="modal-name" id="modalName">${p.name}</div>
-    <div class="modal-sub">
-      <span class="pos-badge" style="background:${DATA.posColors[p.pos]}">${p.pos}</span>
-      <span>${p.nflTeam}</span>
+    <div class="modal-header" style="background:linear-gradient(135deg, ${team.primary}, ${team.secondary})">
+      <div class="modal-avatar">${initials(p.name)}</div>
+      <div>
+        <div class="modal-chip">${statusChip(p)}</div>
+        <div class="modal-header-name" id="modalName">${p.name}</div>
+      </div>
     </div>
-    <div class="modal-row"><span class="k">Position rank</span><span class="v">${rankLabel}</span></div>
-    <div class="modal-row"><span class="k">Overall rank</span><span class="v">${ovrLabel}</span></div>
-    <div class="modal-row"><span class="k">Draft status</span><span class="v">${statusLine(p)}</span></div>
-    <a class="modal-link" href="${yahooPlayerUrl(p)}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+    <div class="modal-teambar">
+      <span class="modal-team-name">${p.nflTeam}</span>
+      <span class="modal-team-detail">${p.pos}${team.abbr ? ' &middot; ' + team.abbr : ''}</span>
+    </div>
+    <div class="modal-body-content">
+      <div class="stat-pills">
+        <div class="stat-pill"><div class="label">Pos rank</div><div class="value">${rankLabel}</div></div>
+        <div class="stat-pill"><div class="label">Overall</div><div class="value">${ovrLabel}</div></div>
+      </div>
+      <div class="modal-status-detail">${statusLine(p)}</div>
+      <a class="modal-link" href="${yahooPlayerUrl(p)}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+    </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
 }
