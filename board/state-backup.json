@@ -131,10 +131,7 @@
       "guaranteed": null
     },
     "Easy Money": {
-      "guaranteed": {
-        "name": "Kenneth Walker",
-        "pos": "RB"
-      }
+      "guaranteed": null
     },
     "Below Me": {
       "guaranteed": null
@@ -152,12 +149,5 @@
       "guaranteed": null
     }
   },
-  "picks": [
-    {
-      "round": 1,
-      "team": "Chili Dogs",
-      "name": "Justin Jefferson",
-      "pos": "WR"
-    }
-  ]
+  "picks": []
 }
