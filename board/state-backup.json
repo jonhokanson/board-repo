@@ -146,7 +146,10 @@
       "guaranteed": null
     },
     "I Know What I Did": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Drake London",
+        "pos": "WR"
+      }
     },
     "Old No 7": {
       "guaranteed": null
@@ -157,6 +160,12 @@
       "round": 1,
       "team": "Chili Dogs",
       "name": "Justin Jefferson",
+      "pos": "WR"
+    },
+    {
+      "round": 1,
+      "team": "Murphy's Law",
+      "name": "Puka Nacua",
       "pos": "WR"
     }
   ]
