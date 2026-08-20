@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.3"
+APP_VERSION = "0.2.1.4"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -628,6 +628,20 @@ const TEAM_STYLE = {{
 }};
 const TEAM_STYLE_FALLBACK = {{primary:"#2a3a48", secondary:"#16212c", abbr:"", logo:null}};
 
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release). Byes run
+// Week 5-14, skipping Week 12 (Thanksgiving, full slate). Team-level, so
+// applies the same to a DEF pool entry as to any of that team's players.
+const TEAM_BYE = {{
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+}};
+
 function initials(name) {{
   const parts = name.split(' ').filter(Boolean);
   const first = parts[0] ? parts[0][0] : '';
@@ -750,6 +764,7 @@ function openPlayerModal(name) {{
   if (!p) return;
   currentModalPlayer = name;
   const team = TEAM_STYLE[p.nflTeam] || TEAM_STYLE_FALLBACK;
+  const bye = TEAM_BYE[p.nflTeam] || null;
   const rankLabel = p.rank ? `${{p.pos}}${{p.rank}}` : '&mdash;';
   const ovrLabel = p.overallRank ? `#${{p.overallRank}}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
@@ -766,7 +781,7 @@ function openPlayerModal(name) {{
     </div>
     <div class="modal-teambar">
       <span class="modal-team-name">${{p.nflTeam}}</span>
-      <span class="modal-team-detail">${{p.pos}}${{team.abbr ? ' &middot; ' + team.abbr : ''}}</span>
+      <span class="modal-team-detail">${{p.pos}}${{team.abbr ? ' &middot; ' + team.abbr : ''}}${{bye ? ' &middot; Bye ' + bye : ''}}</span>
     </div>
     <div class="modal-body-content">
       <div class="stat-pills">
