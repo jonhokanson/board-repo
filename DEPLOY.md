@@ -167,6 +167,8 @@ still goes through the old path since the timer is off: `sudo git -C /var/www/ht
 ## If something's badly broken and you need to fall back
 
 Stop the app (`sudo systemctl stop tbml-draft-app`), re-enable the timer
-(`sudo systemctl enable --now board-sync.timer`), and go back to telling Claude picks in chat
-like before -- the `v1-static-site` tag in `board-repo` is the exact known-good version to revert
-to if needed.
+(`sudo systemctl enable --now board-sync.timer`), and go back to telling Claude picks in chat like
+before. `main`'s own commit history is the safety net here (there's no separate rollback tag to
+maintain) -- `git -C /var/www/html log --oneline` shows every past state, and
+`git -C /var/www/html reset --hard <commit>` (as `www-data`, matching the timer's own permissions)
+gets you back to any of them if a bad push ever needs undoing.
