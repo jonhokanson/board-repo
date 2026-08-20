@@ -69,7 +69,7 @@
   .modal-close { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; border:none; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); color:#fff; font-size:18px; cursor:pointer; line-height:1; z-index:2; }
   .modal-close:hover { background:rgba(0,0,0,0.55); }
   .modal-header { position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; overflow:hidden; }
-  .modal-header-logo { position:absolute; top:50%; right:-18px; transform:translateY(-50%); width:150px; height:150px; object-fit:contain; opacity:0.3; pointer-events:none; filter:brightness(0) invert(1) drop-shadow(0 0 8px rgba(0,0,0,0.25)); }
+  .modal-header-logo { position:absolute; top:50%; right:-18px; transform:translateY(-50%); width:150px; height:150px; object-fit:contain; opacity:0.55; pointer-events:none; filter:drop-shadow(0 0 10px rgba(0,0,0,0.35)); }
   .modal-header > * { position:relative; z-index:1; }
   .modal-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; }
   .modal-chip { display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }
@@ -234,7 +234,7 @@ function openPlayerModal(name) {
   const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
   const ovrLabel = p.overallRank ? `#${p.overallRank}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
-    <div class="modal-header" style="background:linear-gradient(135deg, ${team.primary}, ${team.secondary})">
+    <div class="modal-header" style="background:linear-gradient(rgba(15,23,32,0.55), rgba(15,23,32,0.55)), linear-gradient(135deg, ${team.primary}, ${team.secondary})">
       ${team.logo ? `<img class="modal-header-logo" src="${team.logo}" alt="" onerror="this.remove()">` : ''}
       <div class="modal-avatar">${initials(p.name)}</div>
       <div>
