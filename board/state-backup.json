@@ -149,5 +149,12 @@
       "guaranteed": null
     }
   },
-  "picks": []
+  "picks": [
+    {
+      "round": 1,
+      "team": "Chili Dogs",
+      "name": "Brock Bowers",
+      "pos": "TE"
+    }
+  ]
 }
