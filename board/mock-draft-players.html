@@ -93,14 +93,14 @@
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 MOCK -- Available Players (After 3 Rounds)</h1>
   <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
-    <a class="nav-link" href="mock-draft-board.html">&larr; Back to draft board</a>
+    <a class="nav-link" href="mock_draft_board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
   </div>
 
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
     <button class="tab-btn" id="tabBtnOverall">Overall Ranking</button>
-    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh (15s)</label>
+    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh</label>
   </div>
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
@@ -422,16 +422,24 @@ document.getElementById('tabBtnOverall').addEventListener('click', () => setTab(
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
 
-// Auto-refresh so the list stays current without a manual reload -- matches
-// the ~15s cadence the server pulls updates on. Checkbox-gated: unticking it
-// just stops the next tick from reloading, no page state is lost either way
-// since tab/hide are restored from the URL hash above.
-const AUTO_REFRESH_SECONDS = 15;
+// Real-time updates via the same SSE push as the other board pages (see
+// draft_app.py's /entry/events), gated by the same checkbox as before --
+// unticking it just ignores the next push/poll, no page state is lost
+// either way since tab/hide are restored from the URL hash above. The slow
+// safety-net poll only kicks in if SSE never manages to connect at all.
+const SAFETY_POLL_SECONDS = 30;
 let autoRefreshEnabled = true;
+let sseConnected = false;
 document.getElementById('autoRefreshToggle').addEventListener('change', e => {
   autoRefreshEnabled = e.target.checked;
 });
-setInterval(() => { if (autoRefreshEnabled) location.reload(); }, AUTO_REFRESH_SECONDS * 1000);
+try {
+  const es = new EventSource('/entry/events');
+  es.onopen = () => { sseConnected = true; };
+  es.onmessage = () => { if (autoRefreshEnabled) location.reload(); };
+  es.onerror = () => { if (es.readyState === EventSource.CLOSED) sseConnected = false; };
+} catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
+setInterval(() => { if (autoRefreshEnabled && !sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
 </body>
 </html>
