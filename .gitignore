@@ -1,0 +1,17 @@
+# Runtime config/data -- lives on Web01 only, never committed. state.json
+# starts life as a one-time copy of state.template.json (see DEPLOY.md) and
+# from then on is mutated live by draft_app.py; deploy.sh must never be able
+# to touch it.
+state.json
+state.json.tmp
+state.json.lock
+pin.txt
+secret_key.txt
+
+# Generated pages -- regenerated on every pick, no reason to track them.
+draft-board.html
+draft-players.html
+keep-protect.html
+
+__pycache__/
+*.pyc

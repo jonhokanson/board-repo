@@ -1,0 +1,153 @@
+{
+  "leagueName": "Ted Brown Memorial League (TBML)",
+  "draftDate": "Saturday, Aug 29, 2026",
+  "teams": [
+    "Chili Dogs",
+    "Murphy's Law",
+    "Those Bastards",
+    "Just The Tip",
+    "Easy Money",
+    "Below Me",
+    "Hairy Beavers",
+    "IT Militia",
+    "I Know What I Did",
+    "Old No 7"
+  ],
+  "myTeam": "Just The Tip",
+  "liveRounds": 12,
+  "keepers": {
+    "Chili Dogs": {
+      "keep": {
+        "name": "Chase Brown",
+        "pos": "RB"
+      },
+      "protect": [
+        "Bijan Robinson",
+        "Drake Maye"
+      ]
+    },
+    "Murphy's Law": {
+      "keep": {
+        "name": "Saquon Barkley",
+        "pos": "RB"
+      },
+      "protect": [
+        "Marvin Harrison Jr.",
+        "Kyren Williams"
+      ]
+    },
+    "Those Bastards": {
+      "keep": {
+        "name": "Christian McCaffrey",
+        "pos": "RB"
+      },
+      "protect": [
+        "Omarion Hampton",
+        "Nico Collins"
+      ]
+    },
+    "Just The Tip": {
+      "keep": {
+        "name": "Derrick Henry",
+        "pos": "RB"
+      },
+      "protect": [
+        "Josh Jacobs",
+        "Terry McLaurin"
+      ]
+    },
+    "Easy Money": {
+      "keep": {
+        "name": "Ja'Marr Chase",
+        "pos": "WR"
+      },
+      "protect": [
+        "Kenneth Walker",
+        "Justin Jefferson"
+      ]
+    },
+    "Below Me": {
+      "keep": {
+        "name": "Trey McBride",
+        "pos": "TE"
+      },
+      "protect": [
+        "De'Von Achane",
+        "Ashton Jeanty"
+      ]
+    },
+    "Hairy Beavers": {
+      "keep": {
+        "name": "Jonathan Taylor",
+        "pos": "RB"
+      },
+      "protect": [
+        "CeeDee Lamb",
+        "Jaxon Smith-Njigba"
+      ]
+    },
+    "IT Militia": {
+      "keep": {
+        "name": "Josh Allen",
+        "pos": "QB"
+      },
+      "protect": [
+        "George Pickens",
+        "Tee Higgins"
+      ]
+    },
+    "I Know What I Did": {
+      "keep": {
+        "name": "Jahmyr Gibbs",
+        "pos": "RB"
+      },
+      "protect": [
+        "Puka Nacua",
+        "Drake London"
+      ]
+    },
+    "Old No 7": {
+      "keep": {
+        "name": "James Cook III",
+        "pos": "RB"
+      },
+      "protect": [
+        "Amon-Ra St. Brown",
+        "A.J. Brown"
+      ]
+    }
+  },
+  "protectResolution": {
+    "Chili Dogs": {
+      "guaranteed": null
+    },
+    "Murphy's Law": {
+      "guaranteed": null
+    },
+    "Those Bastards": {
+      "guaranteed": null
+    },
+    "Just The Tip": {
+      "guaranteed": null
+    },
+    "Easy Money": {
+      "guaranteed": null
+    },
+    "Below Me": {
+      "guaranteed": null
+    },
+    "Hairy Beavers": {
+      "guaranteed": null
+    },
+    "IT Militia": {
+      "guaranteed": null
+    },
+    "I Know What I Did": {
+      "guaranteed": null
+    },
+    "Old No 7": {
+      "guaranteed": null
+    }
+  },
+  "picks": []
+}

@@ -1,0 +1,23 @@
+[Unit]
+Description=TBML Draft Live Pick-Entry App
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/tbml-draft-app
+Environment=PORT=5055
+Environment=BOARD_OUT=/var/www/html/board/draft-board.html
+Environment=LIST_OUT=/var/www/html/board/draft-players.html
+Environment=KP_OUT=/var/www/html/board/keep-protect.html
+Environment=GIT_REPO_DIR=/var/www/html
+Environment=GIT_REMOTE=github
+Environment=GIT_BRANCH=main
+ExecStart=/opt/tbml-draft-app/venv/bin/python3 /opt/tbml-draft-app/draft_app.py
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
