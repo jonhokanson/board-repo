@@ -68,7 +68,9 @@
   .modal-panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; max-width:420px; width:100%; position:relative; box-shadow:0 12px 40px rgba(0,0,0,0.5); overflow:hidden; }
   .modal-close { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; border:none; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); color:#fff; font-size:18px; cursor:pointer; line-height:1; z-index:2; }
   .modal-close:hover { background:rgba(0,0,0,0.55); }
-  .modal-header { position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; }
+  .modal-header { position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; overflow:hidden; }
+  .modal-header-logo { position:absolute; top:50%; right:-18px; transform:translateY(-50%); width:150px; height:150px; object-fit:contain; opacity:0.22; pointer-events:none; filter:drop-shadow(0 0 10px rgba(0,0,0,0.25)); }
+  .modal-header > * { position:relative; z-index:1; }
   .modal-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; }
   .modal-chip { display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }
   .modal-header-name { font-size:19px; font-weight:800; line-height:1.15; }
@@ -175,45 +177,47 @@ function statusChip(p) {
   return 'Available';
 }
 
-// Brand colors are approximate, just for a header gradient -- not sourced
-// from an API, and easy to touch up later. Every NFL team is covered so
-// there's always a real gradient; TEAM_STYLE_FALLBACK only kicks in if a
-// pool entry's nflTeam string somehow doesn't match one of these exactly.
+// Colors + logo URLs sourced from nflverse's public teams_colors_logos
+// dataset (github.com/nflverse/nfldata), which mirrors ESPN's team brand
+// colors and hosts logo images at ESPN's public CDN -- not an API key or
+// auth of any kind, just static image URLs. Every NFL team is covered so
+// there's always a real gradient + logo; TEAM_STYLE_FALLBACK only kicks in
+// if a pool entry's nflTeam string somehow doesn't match one of these.
 const TEAM_STYLE = {
-  "Arizona Cardinals": {primary:"#97233F", secondary:"#000000", abbr:"ARI"},
-  "Atlanta Falcons": {primary:"#A71930", secondary:"#000000", abbr:"ATL"},
-  "Baltimore Ravens": {primary:"#241773", secondary:"#000000", abbr:"BAL"},
-  "Buffalo Bills": {primary:"#00338D", secondary:"#C60C30", abbr:"BUF"},
-  "Carolina Panthers": {primary:"#0085CA", secondary:"#101820", abbr:"CAR"},
-  "Chicago Bears": {primary:"#0B162A", secondary:"#C83803", abbr:"CHI"},
-  "Cincinnati Bengals": {primary:"#FB4F14", secondary:"#000000", abbr:"CIN"},
-  "Cleveland Browns": {primary:"#472A08", secondary:"#FF3C00", abbr:"CLE"},
-  "Dallas Cowboys": {primary:"#041E42", secondary:"#869397", abbr:"DAL"},
-  "Denver Broncos": {primary:"#FB4F14", secondary:"#002244", abbr:"DEN"},
-  "Detroit Lions": {primary:"#0076B6", secondary:"#5A6266", abbr:"DET"},
-  "Green Bay Packers": {primary:"#203731", secondary:"#FFB612", abbr:"GB"},
-  "Houston Texans": {primary:"#03202F", secondary:"#A71930", abbr:"HOU"},
-  "Indianapolis Colts": {primary:"#002C5F", secondary:"#A5ACAF", abbr:"IND"},
-  "Jacksonville Jaguars": {primary:"#006778", secondary:"#101820", abbr:"JAX"},
-  "Kansas City Chiefs": {primary:"#E31837", secondary:"#FFB612", abbr:"KC"},
-  "Las Vegas Raiders": {primary:"#A5ACAF", secondary:"#000000", abbr:"LV"},
-  "Los Angeles Chargers": {primary:"#0080C6", secondary:"#FFC20E", abbr:"LAC"},
-  "Los Angeles Rams": {primary:"#003594", secondary:"#FFA300", abbr:"LAR"},
-  "Miami Dolphins": {primary:"#008E97", secondary:"#F58220", abbr:"MIA"},
-  "Minnesota Vikings": {primary:"#4F2683", secondary:"#FFC62F", abbr:"MIN"},
-  "New England Patriots": {primary:"#002244", secondary:"#C60C30", abbr:"NE"},
-  "New Orleans Saints": {primary:"#9F8458", secondary:"#101820", abbr:"NO"},
-  "New York Giants": {primary:"#0B2265", secondary:"#A71930", abbr:"NYG"},
-  "New York Jets": {primary:"#125740", secondary:"#000000", abbr:"NYJ"},
-  "Philadelphia Eagles": {primary:"#004C54", secondary:"#A5ACAF", abbr:"PHI"},
-  "Pittsburgh Steelers": {primary:"#FFB612", secondary:"#101820", abbr:"PIT"},
-  "San Francisco 49ers": {primary:"#AA0000", secondary:"#B3995D", abbr:"SF"},
-  "Seattle Seahawks": {primary:"#002244", secondary:"#69BE28", abbr:"SEA"},
-  "Tampa Bay Buccaneers": {primary:"#D50A0A", secondary:"#34302B", abbr:"TB"},
-  "Tennessee Titans": {primary:"#0C2340", secondary:"#4B92DB", abbr:"TEN"},
-  "Washington Commanders": {primary:"#5A1414", secondary:"#FFB612", abbr:"WSH"},
+  "Arizona Cardinals": {primary:"#97233F", secondary:"#000000", abbr:"ARI", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ari.png"},
+  "Atlanta Falcons": {primary:"#A71930", secondary:"#000000", abbr:"ATL", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/atl.png"},
+  "Baltimore Ravens": {primary:"#241773", secondary:"#9E7C0C", abbr:"BAL", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/bal.png"},
+  "Buffalo Bills": {primary:"#00338D", secondary:"#C60C30", abbr:"BUF", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"},
+  "Carolina Panthers": {primary:"#0085CA", secondary:"#000000", abbr:"CAR", logo:"https://a.espncdn.com/i/teamlogos/nfl/500-dark/car.png"},
+  "Chicago Bears": {primary:"#0B162A", secondary:"#E64100", abbr:"CHI", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/chi.png"},
+  "Cincinnati Bengals": {primary:"#FB4F14", secondary:"#000000", abbr:"CIN", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/cin.png"},
+  "Cleveland Browns": {primary:"#FF3C00", secondary:"#311D00", abbr:"CLE", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/cle.png"},
+  "Dallas Cowboys": {primary:"#002244", secondary:"#B0B7BC", abbr:"DAL", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/dal.png"},
+  "Denver Broncos": {primary:"#002244", secondary:"#FB4F14", abbr:"DEN", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/den.png"},
+  "Detroit Lions": {primary:"#0076B6", secondary:"#B0B7BC", abbr:"DET", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/det.png"},
+  "Green Bay Packers": {primary:"#203731", secondary:"#FFB612", abbr:"GB", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/gb.png"},
+  "Houston Texans": {primary:"#03202F", secondary:"#A71930", abbr:"HOU", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/hou.png"},
+  "Indianapolis Colts": {primary:"#002C5F", secondary:"#a5acaf", abbr:"IND", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ind.png"},
+  "Jacksonville Jaguars": {primary:"#006778", secondary:"#000000", abbr:"JAX", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/jax.png"},
+  "Kansas City Chiefs": {primary:"#E31837", secondary:"#FFB612", abbr:"KC", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/kc.png"},
+  "Las Vegas Raiders": {primary:"#000000", secondary:"#A5ACAF", abbr:"LV", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lv.png"},
+  "Los Angeles Chargers": {primary:"#007BC7", secondary:"#ffc20e", abbr:"LAC", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lac.png"},
+  "Los Angeles Rams": {primary:"#003594", secondary:"#FFD100", abbr:"LAR", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lar.png"},
+  "Miami Dolphins": {primary:"#008E97", secondary:"#F58220", abbr:"MIA", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/mia.png"},
+  "Minnesota Vikings": {primary:"#4F2683", secondary:"#FFC62F", abbr:"MIN", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/min.png"},
+  "New England Patriots": {primary:"#002244", secondary:"#C60C30", abbr:"NE", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ne.png"},
+  "New Orleans Saints": {primary:"#D3BC8D", secondary:"#000000", abbr:"NO", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/no.png"},
+  "New York Giants": {primary:"#0B2265", secondary:"#A71930", abbr:"NYG", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png"},
+  "New York Jets": {primary:"#003F2D", secondary:"#000000", abbr:"NYJ", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png"},
+  "Philadelphia Eagles": {primary:"#004C54", secondary:"#A5ACAF", abbr:"PHI", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/phi.png"},
+  "Pittsburgh Steelers": {primary:"#000000", secondary:"#FFB612", abbr:"PIT", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/pit.png"},
+  "San Francisco 49ers": {primary:"#AA0000", secondary:"#B3995D", abbr:"SF", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/sf.png"},
+  "Seattle Seahawks": {primary:"#002244", secondary:"#69be28", abbr:"SEA", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/sea.png"},
+  "Tampa Bay Buccaneers": {primary:"#A71930", secondary:"#322F2B", abbr:"TB", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/tb.png"},
+  "Tennessee Titans": {primary:"#4495D2", secondary:"#D50A0A", abbr:"TEN", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ten.png"},
+  "Washington Commanders": {primary:"#5A1414", secondary:"#FFB612", abbr:"WSH", logo:"https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png"},
 };
-const TEAM_STYLE_FALLBACK = {primary:"#2a3a48", secondary:"#16212c", abbr:""};
+const TEAM_STYLE_FALLBACK = {primary:"#2a3a48", secondary:"#16212c", abbr:"", logo:null};
 
 function initials(name) {
   const parts = name.split(' ').filter(Boolean);
@@ -230,6 +234,7 @@ function openPlayerModal(name) {
   const ovrLabel = p.overallRank ? `#${p.overallRank}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-header" style="background:linear-gradient(135deg, ${team.primary}, ${team.secondary})">
+      ${team.logo ? `<img class="modal-header-logo" src="${team.logo}" alt="" onerror="this.remove()">` : ''}
       <div class="modal-avatar">${initials(p.name)}</div>
       <div>
         <div class="modal-chip">${statusChip(p)}</div>
