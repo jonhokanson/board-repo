@@ -119,10 +119,7 @@
   },
   "protectResolution": {
     "Chili Dogs": {
-      "guaranteed": {
-        "name": "Bijan Robinson",
-        "pos": "RB"
-      }
+      "guaranteed": null
     },
     "Murphy's Law": {
       "guaranteed": null
@@ -152,12 +149,5 @@
       "guaranteed": null
     }
   },
-  "picks": [
-    {
-      "round": 1,
-      "team": "Chili Dogs",
-      "name": "Drake Maye",
-      "pos": "QB"
-    }
-  ]
+  "picks": []
 }
