@@ -641,7 +641,7 @@ function initials(name) {{
 // cached data yet -- just means the modal keeps showing today's initials
 // avatar and skips the bio row. Nothing about the existing modal depends on
 // this succeeding.
-const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v1';
+const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v2'; // bump this whenever the trimmed payload's fields change, so a code update invalidates old cached data immediately instead of silently missing new fields for up to SLEEPER_MAX_AGE_MS
 const SLEEPER_MAX_AGE_MS = 20 * 60 * 60 * 1000; // under Sleeper's "once/day" guidance
 let sleeperDataPromise = null;
 
