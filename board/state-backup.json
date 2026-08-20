@@ -158,6 +158,12 @@
       "team": "Chili Dogs",
       "name": "Justin Jefferson",
       "pos": "WR"
+    },
+    {
+      "round": 1,
+      "team": "Murphy's Law",
+      "name": "Atlanta Falcons",
+      "pos": "DEF"
     }
   ]
 }
