@@ -81,6 +81,7 @@
   .injury-doubtful { background:#e07b1a; color:#fff; }
   .injury-out, .injury-suspended { background:#d13b3b; color:#fff; }
   .injury-ir, .injury-pup { background:#7a1f1f; color:#fff; }
+  .row-injury-chip { display:none; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
   .modal-header-name { font-size:19px; font-weight:800; line-height:1.15; }
   .modal-teambar { background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }
   .modal-team-name { font-weight:700; font-size:13px; letter-spacing:.01em; }
@@ -101,7 +102,7 @@
 <div class="wrap">
 <div style="background:#f5a623;color:#241a00;font-weight:700;text-align:center;padding:8px 12px;border-radius:8px;margin-bottom:16px;font-size:13px;letter-spacing:.02em;">🎲 MOCK DRAFT &mdash; for demo purposes only. All 10 teams&#39; Keep/Protect are real; every live pick shown (rounds 1&ndash;3) is a simulated guess for planning purposes.</div>
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 MOCK -- Available Players (After 3 Rounds)</h1>
-  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
+  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring. Kept players stay listed (dimmed, not draftable) with a green tag showing who kept them; protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in -- use "Hide unavailable" to drop both from view. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
     <a class="nav-link" href="mock_draft_board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
@@ -327,6 +328,24 @@ function injuryBadgeClass(status) {
   return map[status] || 'injury-questionable';
 }
 
+// Populated once the page-load Sleeper fetch resolves (see the bottom of
+// this script); stays null until then, so applyInjuryBadges() is a safe
+// no-op if it's called before the data arrives -- the .then() callback that
+// sets this also re-runs it once, so nothing is stuck permanently blank.
+let sleeperDataCache = null;
+
+function applyInjuryBadges() {
+  if (!sleeperDataCache) return;
+  document.querySelectorAll('.row-injury-chip').forEach(el => {
+    const info = sleeperDataCache[normalizeName(el.dataset.name)];
+    if (info && info.injuryStatus) {
+      el.textContent = info.injuryStatus;
+      el.className = 'row-injury-chip ' + injuryBadgeClass(info.injuryStatus);
+      el.style.display = 'inline-block';
+    }
+  });
+}
+
 let currentModalPlayer = null;
 
 function openPlayerModal(name) {
@@ -477,7 +496,7 @@ function render(filterText) {
       const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${p.overallRank}` : '';
       row.innerHTML = `
-        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a></div>
+        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></div>
         <div class="player-meta">${ovrLabel ? `<span class="overall-rank">${ovrLabel}</span>` : ''}<span>${p.nflTeam}</span>${statusBadges(p)}</div>
       `;
       grid.appendChild(row);
@@ -485,6 +504,7 @@ function render(filterText) {
     section.appendChild(grid);
     el.appendChild(section);
   });
+  applyInjuryBadges();
 }
 
 function renderOverall(filterText) {
@@ -510,13 +530,14 @@ function renderOverall(filterText) {
     tr.className = p.status !== 'available' ? 'unavailable' : '';
     tr.innerHTML = `
       <td class="overall-num">${p.overallRank ? '#' + p.overallRank : '&mdash;'}</td>
-      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a></td>
+      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></td>
       <td><span class="pos-badge" style="background:${DATA.posColors[p.pos]}">${p.pos}</span></td>
       <td>${p.nflTeam}</td>
       <td>${statusBadges(p)}</td>
     `;
     tbody.appendChild(tr);
   });
+  applyInjuryBadges();
 }
 
 function renderActiveTab() {
@@ -582,6 +603,18 @@ document.getElementById('tabBtnOverall').addEventListener('click', () => setTab(
 // before the first render, so a reload lands back where you left off.
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
+
+// Kick off the Sleeper fetch as soon as the page loads (rather than waiting
+// for someone to open a player's modal) so injury badges next to names in
+// the list can populate without needing any interaction. applyInjuryBadges()
+// re-runs here once data's ready; it also runs at the end of every
+// render()/renderOverall() call above, covering the case where the data was
+// already cached (instant) and a re-render (search, collapse, hide toggle)
+// just needs to reapply it to the freshly rebuilt rows.
+getSleeperData().then(players => {
+  sleeperDataCache = players;
+  applyInjuryBadges();
+});
 
 // Real-time updates via the same SSE push as the other board pages (see
 // draft_app.py's /entry/events), gated by the same checkbox as before --
