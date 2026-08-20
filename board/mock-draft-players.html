@@ -50,8 +50,6 @@
   .hide-toggle { font-size:12px; color:var(--text-dim); background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; margin-bottom:14px; }
   .hide-toggle.active { color:var(--protect); border-color:var(--protect); background:rgba(245,166,35,0.1); }
   .tabs { display:flex; align-items:center; gap:8px; margin:14px 0 18px; }
-  .refresh-toggle { margin-left:auto; font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
-  .refresh-toggle input { cursor:pointer; }
   .tab-btn { font-size:13px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 16px; cursor:pointer; }
   .tab-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-bg,rgba(59,167,255,0.1)); }
   .tab-panel { display:none; }
@@ -110,7 +108,6 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
     <button class="tab-btn" id="tabBtnOverall">Overall Ranking</button>
-    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh</label>
   </div>
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
@@ -615,25 +612,20 @@ getSleeperData().then(players => {
   applyInjuryBadges();
 });
 
-// Real-time updates via the same SSE push as the other board pages (see
-// draft_app.py's /entry/events), gated by the same checkbox as before --
-// unticking it just ignores the next push/poll, no page state is lost
-// either way since tab/hide are restored from the URL hash above. The slow
-// safety-net poll only kicks in if SSE never manages to connect at all.
+// Real-time updates via the same SSE push as the other board pages -- see
+// draft_app.py's /entry/events. Tab/hide state is restored from the URL
+// hash above, so a reload never loses your place. The slow safety-net poll
+// only kicks in if SSE never manages to connect at all.
 const SAFETY_POLL_SECONDS = 30;
-let autoRefreshEnabled = true;
 let sseConnected = false;
-document.getElementById('autoRefreshToggle').addEventListener('change', e => {
-  autoRefreshEnabled = e.target.checked;
-});
 try {
   const es = new EventSource('/entry/events');
   es.onopen = () => { sseConnected = true; };
-  es.onmessage = () => { if (autoRefreshEnabled) location.reload(); };
+  es.onmessage = () => location.reload();
   es.onerror = () => { if (es.readyState === EventSource.CLOSED) sseConnected = false; };
 } catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
-setInterval(() => { if (autoRefreshEnabled && !sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
+setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
-<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.1</div>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.2</div>
 </body>
 </html>
