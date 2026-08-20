@@ -50,8 +50,6 @@
   .hide-toggle { font-size:12px; color:var(--text-dim); background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; margin-bottom:14px; }
   .hide-toggle.active { color:var(--protect); border-color:var(--protect); background:rgba(245,166,35,0.1); }
   .tabs { display:flex; align-items:center; gap:8px; margin:14px 0 18px; }
-  .refresh-toggle { margin-left:auto; font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
-  .refresh-toggle input { cursor:pointer; }
   .tab-btn { font-size:13px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 16px; cursor:pointer; }
   .tab-btn.active { color:var(--accent); border-color:var(--accent); background:var(--accent-bg,rgba(59,167,255,0.1)); }
   .tab-panel { display:none; }
@@ -81,6 +79,7 @@
   .injury-doubtful { background:#e07b1a; color:#fff; }
   .injury-out, .injury-suspended { background:#d13b3b; color:#fff; }
   .injury-ir, .injury-pup { background:#7a1f1f; color:#fff; }
+  .row-injury-chip { display:none; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
   .modal-header-name { font-size:19px; font-weight:800; line-height:1.15; }
   .modal-teambar { background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }
   .modal-team-name { font-weight:700; font-size:13px; letter-spacing:.01em; }
@@ -100,7 +99,6 @@
 <body>
 <div class="wrap">
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 Available Players</h1>
-  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
     <a class="nav-link" href="draft-board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
@@ -109,7 +107,6 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
     <button class="tab-btn" id="tabBtnOverall">Overall Ranking</button>
-    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh</label>
   </div>
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
@@ -229,6 +226,20 @@ const TEAM_STYLE = {
 };
 const TEAM_STYLE_FALLBACK = {primary:"#2a3a48", secondary:"#16212c", abbr:"", logo:null};
 
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release). Byes run
+// Week 5-14, skipping Week 12 (Thanksgiving, full slate). Team-level, so
+// applies the same to a DEF pool entry as to any of that team's players.
+const TEAM_BYE = {
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+};
+
 function initials(name) {
   const parts = name.split(' ').filter(Boolean);
   const first = parts[0] ? parts[0][0] : '';
@@ -247,7 +258,7 @@ function initials(name) {
 // cached data yet -- just means the modal keeps showing today's initials
 // avatar and skips the bio row. Nothing about the existing modal depends on
 // this succeeding.
-const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v1';
+const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v2'; // bump this whenever the trimmed payload's fields change, so a code update invalidates old cached data immediately instead of silently missing new fields for up to SLEEPER_MAX_AGE_MS
 const SLEEPER_MAX_AGE_MS = 20 * 60 * 60 * 1000; // under Sleeper's "once/day" guidance
 let sleeperDataPromise = null;
 
@@ -326,6 +337,24 @@ function injuryBadgeClass(status) {
   return map[status] || 'injury-questionable';
 }
 
+// Populated once the page-load Sleeper fetch resolves (see the bottom of
+// this script); stays null until then, so applyInjuryBadges() is a safe
+// no-op if it's called before the data arrives -- the .then() callback that
+// sets this also re-runs it once, so nothing is stuck permanently blank.
+let sleeperDataCache = null;
+
+function applyInjuryBadges() {
+  if (!sleeperDataCache) return;
+  document.querySelectorAll('.row-injury-chip').forEach(el => {
+    const info = sleeperDataCache[normalizeName(el.dataset.name)];
+    if (info && info.injuryStatus) {
+      el.textContent = info.injuryStatus;
+      el.className = 'row-injury-chip ' + injuryBadgeClass(info.injuryStatus);
+      el.style.display = 'inline-block';
+    }
+  });
+}
+
 let currentModalPlayer = null;
 
 function openPlayerModal(name) {
@@ -333,6 +362,7 @@ function openPlayerModal(name) {
   if (!p) return;
   currentModalPlayer = name;
   const team = TEAM_STYLE[p.nflTeam] || TEAM_STYLE_FALLBACK;
+  const bye = TEAM_BYE[p.nflTeam] || null;
   const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
   const ovrLabel = p.overallRank ? `#${p.overallRank}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
@@ -349,7 +379,7 @@ function openPlayerModal(name) {
     </div>
     <div class="modal-teambar">
       <span class="modal-team-name">${p.nflTeam}</span>
-      <span class="modal-team-detail">${p.pos}${team.abbr ? ' &middot; ' + team.abbr : ''}</span>
+      <span class="modal-team-detail">${p.pos}${team.abbr ? ' &middot; ' + team.abbr : ''}${bye ? ' &middot; Bye ' + bye : ''}</span>
     </div>
     <div class="modal-body-content">
       <div class="stat-pills">
@@ -360,6 +390,7 @@ function openPlayerModal(name) {
       <div class="modal-college" id="modalCollege" style="display:none;"></div>
       <div class="modal-status-detail">${statusLine(p)}</div>
       <a class="modal-link" href="${yahooPlayerUrl(p)}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+      <a class="modal-link" id="modalSleeperLink" href="#" target="_blank" rel="noopener" style="display:none; margin-top:8px;">View on Sleeper &#8599;</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
@@ -379,6 +410,11 @@ function openPlayerModal(name) {
         // can't collide with the onerror attribute's own quoting -- a name
         // producing a stray `"` there would otherwise break the markup.
         avatarEl.innerHTML = `<img src="https://sleepercdn.com/content/nfl/players/${info.id}.jpg" alt="" data-fallback="${escAttr(initials(p.name))}" onerror="this.parentElement.textContent=this.dataset.fallback">`;
+      }
+      const sleeperLinkEl = document.getElementById('modalSleeperLink');
+      if (sleeperLinkEl) {
+        sleeperLinkEl.href = `https://sleeper.com/nfl/players/${info.id}`;
+        sleeperLinkEl.style.display = '';
       }
     }
 
@@ -476,7 +512,7 @@ function render(filterText) {
       const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${p.overallRank}` : '';
       row.innerHTML = `
-        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a></div>
+        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></div>
         <div class="player-meta">${ovrLabel ? `<span class="overall-rank">${ovrLabel}</span>` : ''}<span>${p.nflTeam}</span>${statusBadges(p)}</div>
       `;
       grid.appendChild(row);
@@ -484,6 +520,7 @@ function render(filterText) {
     section.appendChild(grid);
     el.appendChild(section);
   });
+  applyInjuryBadges();
 }
 
 function renderOverall(filterText) {
@@ -509,13 +546,14 @@ function renderOverall(filterText) {
     tr.className = p.status !== 'available' ? 'unavailable' : '';
     tr.innerHTML = `
       <td class="overall-num">${p.overallRank ? '#' + p.overallRank : '&mdash;'}</td>
-      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a></td>
+      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></td>
       <td><span class="pos-badge" style="background:${DATA.posColors[p.pos]}">${p.pos}</span></td>
       <td>${p.nflTeam}</td>
       <td>${statusBadges(p)}</td>
     `;
     tbody.appendChild(tr);
   });
+  applyInjuryBadges();
 }
 
 function renderActiveTab() {
@@ -582,24 +620,32 @@ document.getElementById('tabBtnOverall').addEventListener('click', () => setTab(
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
 
-// Real-time updates via the same SSE push as the other board pages (see
-// draft_app.py's /entry/events), gated by the same checkbox as before --
-// unticking it just ignores the next push/poll, no page state is lost
-// either way since tab/hide are restored from the URL hash above. The slow
-// safety-net poll only kicks in if SSE never manages to connect at all.
-const SAFETY_POLL_SECONDS = 30;
-let autoRefreshEnabled = true;
-let sseConnected = false;
-document.getElementById('autoRefreshToggle').addEventListener('change', e => {
-  autoRefreshEnabled = e.target.checked;
+// Kick off the Sleeper fetch as soon as the page loads (rather than waiting
+// for someone to open a player's modal) so injury badges next to names in
+// the list can populate without needing any interaction. applyInjuryBadges()
+// re-runs here once data's ready; it also runs at the end of every
+// render()/renderOverall() call above, covering the case where the data was
+// already cached (instant) and a re-render (search, collapse, hide toggle)
+// just needs to reapply it to the freshly rebuilt rows.
+getSleeperData().then(players => {
+  sleeperDataCache = players;
+  applyInjuryBadges();
 });
+
+// Real-time updates via the same SSE push as the other board pages -- see
+// draft_app.py's /entry/events. Tab/hide state is restored from the URL
+// hash above, so a reload never loses your place. The slow safety-net poll
+// only kicks in if SSE never manages to connect at all.
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
 try {
   const es = new EventSource('/entry/events');
   es.onopen = () => { sseConnected = true; };
-  es.onmessage = () => { if (autoRefreshEnabled) location.reload(); };
+  es.onmessage = () => location.reload();
   es.onerror = () => { if (es.readyState === EventSource.CLOSED) sseConnected = false; };
 } catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
-setInterval(() => { if (autoRefreshEnabled && !sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
+setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.4</div>
 </body>
 </html>
