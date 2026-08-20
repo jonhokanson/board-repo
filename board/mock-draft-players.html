@@ -376,6 +376,7 @@ function openPlayerModal(name) {
       <div class="modal-college" id="modalCollege" style="display:none;"></div>
       <div class="modal-status-detail">${statusLine(p)}</div>
       <a class="modal-link" href="${yahooPlayerUrl(p)}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+      <a class="modal-link" id="modalSleeperLink" href="#" target="_blank" rel="noopener" style="display:none; margin-top:8px;">View on Sleeper &#8599;</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
@@ -395,6 +396,11 @@ function openPlayerModal(name) {
         // can't collide with the onerror attribute's own quoting -- a name
         // producing a stray `"` there would otherwise break the markup.
         avatarEl.innerHTML = `<img src="https://sleepercdn.com/content/nfl/players/${info.id}.jpg" alt="" data-fallback="${escAttr(initials(p.name))}" onerror="this.parentElement.textContent=this.dataset.fallback">`;
+      }
+      const sleeperLinkEl = document.getElementById('modalSleeperLink');
+      if (sleeperLinkEl) {
+        sleeperLinkEl.href = `https://sleeper.com/nfl/players/${info.id}`;
+        sleeperLinkEl.style.display = '';
       }
     }
 
@@ -626,6 +632,6 @@ try {
 } catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
 setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
-<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.2</div>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.3</div>
 </body>
 </html>
