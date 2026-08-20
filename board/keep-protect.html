@@ -71,7 +71,7 @@
 </div>
 
 <script>
-const DATA = {"rows": [{"team": "Chili Dogs", "keep": {"name": "Chase Brown", "pos": "RB"}, "protects": [{"name": "Bijan Robinson", "pos": "RB", "status": "pending", "detail": null}, {"name": "Drake Maye", "pos": "QB", "status": "pending", "detail": null}]}, {"team": "Murphy's Law", "keep": {"name": "Saquon Barkley", "pos": "RB"}, "protects": [{"name": "Marvin Harrison Jr.", "pos": "WR", "status": "pending", "detail": null}, {"name": "Kyren Williams", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Those Bastards", "keep": {"name": "Christian McCaffrey", "pos": "RB"}, "protects": [{"name": "Omarion Hampton", "pos": "RB", "status": "pending", "detail": null}, {"name": "Nico Collins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Just The Tip", "keep": {"name": "Derrick Henry", "pos": "RB"}, "protects": [{"name": "Josh Jacobs", "pos": "RB", "status": "pending", "detail": null}, {"name": "Terry McLaurin", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Easy Money", "keep": {"name": "Ja'Marr Chase", "pos": "WR"}, "protects": [{"name": "Kenneth Walker", "pos": "RB", "status": "pending", "detail": null}, {"name": "Justin Jefferson", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Below Me", "keep": {"name": "Trey McBride", "pos": "TE"}, "protects": [{"name": "De'Von Achane", "pos": "RB", "status": "pending", "detail": null}, {"name": "Ashton Jeanty", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Hairy Beavers", "keep": {"name": "Jonathan Taylor", "pos": "RB"}, "protects": [{"name": "CeeDee Lamb", "pos": "WR", "status": "pending", "detail": null}, {"name": "Jaxon Smith-Njigba", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "IT Militia", "keep": {"name": "Josh Allen", "pos": "QB"}, "protects": [{"name": "George Pickens", "pos": "WR", "status": "pending", "detail": null}, {"name": "Tee Higgins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "I Know What I Did", "keep": {"name": "Jahmyr Gibbs", "pos": "RB"}, "protects": [{"name": "Puka Nacua", "pos": "WR", "status": "pending", "detail": null}, {"name": "Drake London", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Old No 7", "keep": {"name": "James Cook III", "pos": "RB"}, "protects": [{"name": "Amon-Ra St. Brown", "pos": "WR", "status": "pending", "detail": null}, {"name": "A.J. Brown", "pos": "WR", "status": "pending", "detail": null}]}], "resolvedCount": 0, "totalTeams": 10};
+const DATA = {"rows": [{"team": "Chili Dogs", "keep": {"name": "Chase Brown", "pos": "RB"}, "protects": [{"name": "Bijan Robinson", "pos": "RB", "status": "guaranteed", "detail": null}, {"name": "Drake Maye", "pos": "QB", "status": "picked", "detail": {"round": 1, "team": "Chili Dogs", "label": "R1"}}]}, {"team": "Murphy's Law", "keep": {"name": "Saquon Barkley", "pos": "RB"}, "protects": [{"name": "Marvin Harrison Jr.", "pos": "WR", "status": "pending", "detail": null}, {"name": "Kyren Williams", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Those Bastards", "keep": {"name": "Christian McCaffrey", "pos": "RB"}, "protects": [{"name": "Omarion Hampton", "pos": "RB", "status": "pending", "detail": null}, {"name": "Nico Collins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Just The Tip", "keep": {"name": "Derrick Henry", "pos": "RB"}, "protects": [{"name": "Josh Jacobs", "pos": "RB", "status": "pending", "detail": null}, {"name": "Terry McLaurin", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Easy Money", "keep": {"name": "Ja'Marr Chase", "pos": "WR"}, "protects": [{"name": "Kenneth Walker", "pos": "RB", "status": "pending", "detail": null}, {"name": "Justin Jefferson", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Below Me", "keep": {"name": "Trey McBride", "pos": "TE"}, "protects": [{"name": "De'Von Achane", "pos": "RB", "status": "pending", "detail": null}, {"name": "Ashton Jeanty", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Hairy Beavers", "keep": {"name": "Jonathan Taylor", "pos": "RB"}, "protects": [{"name": "CeeDee Lamb", "pos": "WR", "status": "pending", "detail": null}, {"name": "Jaxon Smith-Njigba", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "IT Militia", "keep": {"name": "Josh Allen", "pos": "QB"}, "protects": [{"name": "George Pickens", "pos": "WR", "status": "pending", "detail": null}, {"name": "Tee Higgins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "I Know What I Did", "keep": {"name": "Jahmyr Gibbs", "pos": "RB"}, "protects": [{"name": "Puka Nacua", "pos": "WR", "status": "pending", "detail": null}, {"name": "Drake London", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Old No 7", "keep": {"name": "James Cook III", "pos": "RB"}, "protects": [{"name": "Amon-Ra St. Brown", "pos": "WR", "status": "pending", "detail": null}, {"name": "A.J. Brown", "pos": "WR", "status": "pending", "detail": null}]}], "resolvedCount": 1, "totalTeams": 10};
 
 function badgeFor(pp) {
   if (pp.status === 'guaranteed') return 'Guaranteed &middot; R13';
@@ -97,12 +97,21 @@ function renderGrid() {
   }).join('');
 }
 
-// Auto-refresh so the commissioner can just leave this open and watch protects
-// resolve live as picks come in -- same 15s cadence as the draft board.
-const AUTO_REFRESH_SECONDS = 15;
-setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
+// Real-time updates via the same SSE push as the other board pages -- see
+// draft_app.py's /entry/events -- so the commissioner can leave this open
+// and watch protects resolve the instant a pick lands. Safety-net poll
+// covers the case where SSE never connects at all.
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {
+  const es = new EventSource('/entry/events');
+  es.onopen = () => { sseConnected = true; };
+  es.onmessage = () => location.reload();
+  es.onerror = () => { if (es.readyState === EventSource.CLOSED) sseConnected = false; };
+} catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
+setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 
-document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolvedCount + ' of ' + DATA.totalTeams + ' resolved · auto-refreshing every ' + AUTO_REFRESH_SECONDS + 's';
+document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolvedCount + ' of ' + DATA.totalTeams + ' resolved · live-updating';
 renderSummary();
 renderGrid();
 </script>

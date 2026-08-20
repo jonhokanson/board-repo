@@ -66,7 +66,7 @@
 </div>
 
 <script>
-const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB"}, {"name": "Saquon Barkley", "pos": "RB"}, {"name": "Christian McCaffrey", "pos": "RB"}, {"name": "Derrick Henry", "pos": "RB"}, {"name": "Ja'Marr Chase", "pos": "WR"}, {"name": "Trey McBride", "pos": "TE"}, {"name": "Jonathan Taylor", "pos": "RB"}, {"name": "Josh Allen", "pos": "QB"}, {"name": "Jahmyr Gibbs", "pos": "RB"}, {"name": "James Cook III", "pos": "RB"}], "protectRow": [null, null, null, null, null, null, null, null, null, null], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
+const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[{"name": "Drake Maye", "pos": "QB"}, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB"}, {"name": "Saquon Barkley", "pos": "RB"}, {"name": "Christian McCaffrey", "pos": "RB"}, {"name": "Derrick Henry", "pos": "RB"}, {"name": "Ja'Marr Chase", "pos": "WR"}, {"name": "Trey McBride", "pos": "TE"}, {"name": "Jonathan Taylor", "pos": "RB"}, {"name": "Josh Allen", "pos": "QB"}, {"name": "Jahmyr Gibbs", "pos": "RB"}, {"name": "James Cook III", "pos": "RB"}], "protectRow": [{"name": "Bijan Robinson", "pos": "RB"}, null, null, null, null, null, null, null, null, null], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
 
 function hexIsSet(pos) { return STATE.posColors[pos]; }
 
@@ -146,12 +146,23 @@ function renderBoard() {
   });
 }
 
-// Auto-refresh so the board stays current without a manual reload -- matches
-// the ~15s cadence the server pulls updates on.
-const AUTO_REFRESH_SECONDS = 15;
-setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
+// Real-time updates: the live app pushes a notice over Server-Sent Events
+// (see draft_app.py's /entry/events) the instant a pick lands, so this page
+// reloads in well under a second instead of waiting on a timer. Browsers
+// reconnect a dropped EventSource on their own; the slow safety-net poll
+// below only matters if SSE can't connect at all (app not deployed yet, or
+// briefly down), so the page never goes silently stale either way.
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {
+  const es = new EventSource('/entry/events');
+  es.onopen = () => { sseConnected = true; };
+  es.onmessage = () => location.reload();
+  es.onerror = () => { if (es.readyState === EventSource.CLOSED) sseConnected = false; };
+} catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
+setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 
-document.getElementById('updated').textContent = 'Last updated: ' + (STATE.picksGrid.flat().filter(Boolean).length ? (STATE.picksGrid.flat().filter(Boolean).length + ' live picks made') : 'pre-draft, no live picks yet') + ' · auto-refreshing every ' + AUTO_REFRESH_SECONDS + 's';
+document.getElementById('updated').textContent = 'Last updated: ' + (STATE.picksGrid.flat().filter(Boolean).length ? (STATE.picksGrid.flat().filter(Boolean).length + ' live picks made') : 'pre-draft, no live picks yet') + ' · live-updating';
 renderHead();
 renderLegend();
 renderBoard();
