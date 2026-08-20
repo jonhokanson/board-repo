@@ -249,7 +249,7 @@ function initials(name) {
 // cached data yet -- just means the modal keeps showing today's initials
 // avatar and skips the bio row. Nothing about the existing modal depends on
 // this succeeding.
-const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v1';
+const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v2'; // bump this whenever the trimmed payload's fields change, so a code update invalidates old cached data immediately instead of silently missing new fields for up to SLEEPER_MAX_AGE_MS
 const SLEEPER_MAX_AGE_MS = 20 * 60 * 60 * 1000; // under Sleeper's "once/day" guidance
 let sleeperDataPromise = null;
 
@@ -635,5 +635,6 @@ try {
 } catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
 setInterval(() => { if (autoRefreshEnabled && !sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.0</div>
 </body>
 </html>
