@@ -22,9 +22,11 @@ import fcntl
 import html
 import json
 import os
+import queue
 import subprocess
+import threading
 
-from flask import Flask, request, redirect, url_for, session, make_response
+from flask import Flask, request, redirect, url_for, session, make_response, Response
 
 import generate as g
 
@@ -146,6 +148,51 @@ def push_backup(message, state):
 
 def require_auth():
     return session.get("authed") is True
+
+
+# --- Real-time push (Server-Sent Events) ---------------------------------
+# Every viewer with a board page open (draft-board.html / draft-players.html
+# / keep-protect.html) holds a long-lived connection to /entry/events. The
+# instant a pick or undo lands, broadcast_update() wakes every connected
+# client's queue, and each one's stream() generator turns that into an SSE
+# message telling the browser to reload. This is deliberately NOT gated by
+# require_auth() -- the board pages themselves are public static files with
+# no PIN, and the push carries no data of its own (just "something changed"),
+# so there's nothing here that isn't already visible to anyone with the URL.
+_sse_clients = set()
+_sse_lock = threading.Lock()
+
+
+def broadcast_update():
+    with _sse_lock:
+        clients = list(_sse_clients)
+    for q in clients:
+        q.put_nowait("update")
+
+
+@app.route("/entry/events")
+def events():
+    q = queue.Queue()
+    with _sse_lock:
+        _sse_clients.add(q)
+
+    def stream():
+        try:
+            yield "retry: 3000\n\n"
+            while True:
+                try:
+                    msg = q.get(timeout=20)
+                    yield f"data: {msg}\n\n"
+                except queue.Empty:
+                    yield ": keep-alive\n\n"  # comment line -- keeps the connection open through proxies/timeouts
+        finally:
+            with _sse_lock:
+                _sse_clients.discard(q)
+
+    resp = Response(stream(), mimetype="text/event-stream")
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"  # belt-and-suspenders vs. nginx proxy buffering
+    return resp
 
 
 PAGE_STYLE = """
@@ -428,6 +475,7 @@ def submit_pick():
         state["protectResolution"] = g.compute_protect_resolution(state, pool)
         save_state(state)
         regenerate_pages(state, pool)
+        broadcast_update()
         git_result = push_backup(f"Live pick: {player_name} -> {team} (R{round_})", state)
 
     return redirect(
@@ -449,6 +497,7 @@ def undo_pick():
         state["protectResolution"] = g.compute_protect_resolution(state, pool)
         save_state(state)
         regenerate_pages(state, pool)
+        broadcast_update()
         git_result = push_backup(f"Undo pick: {removed['name']} ({removed['team']}, R{removed['round']})", state)
 
     return redirect(
@@ -476,4 +525,9 @@ def entry_with_msg():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5055"))
-    app.run(host="127.0.0.1", port=port, debug=False)
+    # threaded=True is required now, not just nice-to-have -- /entry/events
+    # holds a long-lived connection per viewer, and without threading that
+    # single connection would block every other request (pick entry, board
+    # loads) for as long as it's open. Fine for Werkzeug's dev server at this
+    # scale (a home-lab league, a handful of concurrent viewers).
+    app.run(host="127.0.0.1", port=port, debug=False, threaded=True)

@@ -358,12 +358,23 @@ function renderBoard() {{
   }});
 }}
 
-// Auto-refresh so the board stays current without a manual reload -- matches
-// the ~15s cadence the server pulls updates on.
-const AUTO_REFRESH_SECONDS = 15;
-setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
+// Real-time updates: the live app pushes a notice over Server-Sent Events
+// (see draft_app.py's /entry/events) the instant a pick lands, so this page
+// reloads in well under a second instead of waiting on a timer. Browsers
+// reconnect a dropped EventSource on their own; the slow safety-net poll
+// below only matters if SSE can't connect at all (app not deployed yet, or
+// briefly down), so the page never goes silently stale either way.
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {{
+  const es = new EventSource('/entry/events');
+  es.onopen = () => {{ sseConnected = true; }};
+  es.onmessage = () => location.reload();
+  es.onerror = () => {{ if (es.readyState === EventSource.CLOSED) sseConnected = false; }};
+}} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
+setInterval(() => {{ if (!sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
 
-document.getElementById('updated').textContent = 'Last updated: ' + (STATE.picksGrid.flat().filter(Boolean).length ? (STATE.picksGrid.flat().filter(Boolean).length + ' live picks made') : 'pre-draft, no live picks yet') + ' · auto-refreshing every ' + AUTO_REFRESH_SECONDS + 's';
+document.getElementById('updated').textContent = 'Last updated: ' + (STATE.picksGrid.flat().filter(Boolean).length ? (STATE.picksGrid.flat().filter(Boolean).length + ' live picks made') : 'pre-draft, no live picks yet') + ' · live-updating';
 renderHead();
 renderLegend();
 renderBoard();
@@ -481,7 +492,7 @@ def render_available_players(pool, derived):
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnByPos">By Position</button>
     <button class="tab-btn" id="tabBtnOverall">Overall Ranking</button>
-    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh (15s)</label>
+    <label class="refresh-toggle"><input type="checkbox" id="autoRefreshToggle" checked> Auto-refresh</label>
   </div>
 
   <button class="toggle-all" id="toggleAll">Collapse all</button>
@@ -803,16 +814,24 @@ document.getElementById('tabBtnOverall').addEventListener('click', () => setTab(
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
 
-// Auto-refresh so the list stays current without a manual reload -- matches
-// the ~15s cadence the server pulls updates on. Checkbox-gated: unticking it
-// just stops the next tick from reloading, no page state is lost either way
-// since tab/hide are restored from the URL hash above.
-const AUTO_REFRESH_SECONDS = 15;
+// Real-time updates via the same SSE push as the other board pages (see
+// draft_app.py's /entry/events), gated by the same checkbox as before --
+// unticking it just ignores the next push/poll, no page state is lost
+// either way since tab/hide are restored from the URL hash above. The slow
+// safety-net poll only kicks in if SSE never manages to connect at all.
+const SAFETY_POLL_SECONDS = 30;
 let autoRefreshEnabled = true;
+let sseConnected = false;
 document.getElementById('autoRefreshToggle').addEventListener('change', e => {{
   autoRefreshEnabled = e.target.checked;
 }});
-setInterval(() => {{ if (autoRefreshEnabled) location.reload(); }}, AUTO_REFRESH_SECONDS * 1000);
+try {{
+  const es = new EventSource('/entry/events');
+  es.onopen = () => {{ sseConnected = true; }};
+  es.onmessage = () => {{ if (autoRefreshEnabled) location.reload(); }};
+  es.onerror = () => {{ if (es.readyState === EventSource.CLOSED) sseConnected = false; }};
+}} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
+setInterval(() => {{ if (autoRefreshEnabled && !sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
 </script>
 </body>
 </html>
@@ -920,12 +939,21 @@ function renderGrid() {{
   }}).join('');
 }}
 
-// Auto-refresh so the commissioner can just leave this open and watch protects
-// resolve live as picks come in -- same 15s cadence as the draft board.
-const AUTO_REFRESH_SECONDS = 15;
-setTimeout(() => location.reload(), AUTO_REFRESH_SECONDS * 1000);
+// Real-time updates via the same SSE push as the other board pages -- see
+// draft_app.py's /entry/events -- so the commissioner can leave this open
+// and watch protects resolve the instant a pick lands. Safety-net poll
+// covers the case where SSE never connects at all.
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {{
+  const es = new EventSource('/entry/events');
+  es.onopen = () => {{ sseConnected = true; }};
+  es.onmessage = () => location.reload();
+  es.onerror = () => {{ if (es.readyState === EventSource.CLOSED) sseConnected = false; }};
+}} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
+setInterval(() => {{ if (!sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
 
-document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolvedCount + ' of ' + DATA.totalTeams + ' resolved · auto-refreshing every ' + AUTO_REFRESH_SECONDS + 's';
+document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolvedCount + ' of ' + DATA.totalTeams + ' resolved · live-updating';
 renderSummary();
 renderGrid();
 </script>

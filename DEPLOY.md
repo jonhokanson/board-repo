@@ -117,7 +117,25 @@ location /entry {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }
+
+location /entry/events {
+    proxy_pass http://127.0.0.1:5055;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 3600s;
+}
 ```
+The second block is for the real-time board updates (Server-Sent Events) -- every open board page
+holds a long-lived connection here so it can be pushed a refresh the instant a pick lands, instead
+of polling on a timer. It needs `proxy_buffering off` specifically, or nginx will hold the whole
+response in a buffer instead of streaming it through as it's generated, which silently breaks the
+real-time push (the page would still work, just fall back to the safety-net poll every 30s). nginx
+matches the more specific `/entry/events` block for that path automatically, so this doesn't change
+anything about how `/entry` itself is handled.
+
 Then:
 ```
 sudo nginx -t
