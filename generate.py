@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.0"
+APP_VERSION = "0.2.1.1"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -503,7 +503,6 @@ def render_available_players(pool, derived):
 <body>
 <div class="wrap">
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 Available Players</h1>
-  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring. Kept players stay listed (dimmed, not draftable) with a green tag showing who kept them; protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in -- use "Hide unavailable" to drop both from view. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
     <a class="nav-link" href="draft-board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
