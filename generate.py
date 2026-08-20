@@ -548,7 +548,7 @@ function statusLine(p) {{
   if (p.status === 'kept') return `Kept by ${{p.pickInfo.team}}`;
   if (p.status === 'picked') return `Picked ${{p.pickInfo.label}} by ${{p.pickInfo.team}}`;
   if (p.status === 'protected') return `Guaranteed ${{p.pickInfo.label}} to ${{p.pickInfo.team}}`;
-  if (p.protectedBy) return `Available &mdash; protected by ${{p.protectedBy}} if drafted`;
+  if (p.protectedBy) return `Available &mdash; protected by ${{p.protectedBy}}`;
   return 'Available';
 }}
 
