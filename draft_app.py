@@ -525,6 +525,16 @@ def entry_with_msg():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5055"))
+    # Every (re)start rebuilds the static pages from the current code +
+    # state.json. Without this, a code-only update (a modal style tweak, a
+    # new column) sits invisible on disk until the next real pick or undo
+    # regenerates the pages -- deploy.sh restarts the service but nothing
+    # else triggers a rebuild. Best-effort: a missing/corrupt state.json at
+    # this exact instant shouldn't stop the app from starting.
+    try:
+        regenerate_pages(load_state(), load_pool())
+    except Exception as e:
+        print(f"Startup page regeneration skipped: {e}")
     # threaded=True is required now, not just nice-to-have -- /entry/events
     # holds a long-lived connection per viewer, and without threading that
     # single connection would block every other request (pick entry, board
