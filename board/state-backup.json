@@ -128,7 +128,10 @@
       "guaranteed": null
     },
     "Just The Tip": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Terry McLaurin",
+        "pos": "WR"
+      }
     },
     "Easy Money": {
       "guaranteed": {
@@ -164,6 +167,12 @@
       "team": "Murphy's Law",
       "name": "Atlanta Falcons",
       "pos": "DEF"
+    },
+    {
+      "round": 1,
+      "team": "Those Bastards",
+      "name": "Josh Jacobs",
+      "pos": "RB"
     }
   ]
 }
