@@ -71,8 +71,17 @@
   .modal-header { position:relative; padding:20px 52px 18px 20px; display:flex; align-items:center; gap:14px; color:#fff; overflow:hidden; }
   .modal-header-logo { position:absolute; top:50%; right:-10px; transform:translateY(-50%); width:130px; height:130px; object-fit:contain; opacity:0.55; pointer-events:none; filter:drop-shadow(0 0 10px rgba(0,0,0,0.35)); }
   .modal-header > *:not(.modal-header-logo) { position:relative; z-index:1; }
-  .modal-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; }
+  .modal-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; overflow:hidden; }
+  .modal-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .modal-chip-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .modal-chip { display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }
+  .injury-chip { display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; margin-bottom:6px; }
+  .injury-questionable { background:#f5c423; color:#241a00; }
+  .injury-probable { background:#4cbb79; color:#0c2016; }
+  .injury-doubtful { background:#e07b1a; color:#fff; }
+  .injury-out, .injury-suspended { background:#d13b3b; color:#fff; }
+  .injury-ir, .injury-pup { background:#7a1f1f; color:#fff; }
+  .row-injury-chip { display:none; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
   .modal-header-name { font-size:19px; font-weight:800; line-height:1.15; }
   .modal-teambar { background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }
   .modal-team-name { font-weight:700; font-size:13px; letter-spacing:.01em; }
@@ -82,6 +91,8 @@
   .stat-pill { flex:1; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:9px 6px; text-align:center; }
   .stat-pill .label { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:4px; }
   .stat-pill .value { font-size:14.5px; font-weight:800; }
+  .bio-pills .stat-pill .value { font-size:13px; }
+  .modal-college { font-size:11.5px; color:var(--text-dim); text-align:center; margin:-4px 0 12px; }
   .modal-status-detail { font-size:12.5px; color:var(--text-dim); text-align:center; margin-bottom:14px; }
   .modal-link { display:block; text-align:center; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:9px 14px; border-radius:8px; }
   .modal-link:hover { background:rgba(59,167,255,0.1); }
@@ -91,7 +102,7 @@
 <div class="wrap">
 <div style="background:#f5a623;color:#241a00;font-weight:700;text-align:center;padding:8px 12px;border-radius:8px;margin-bottom:16px;font-size:13px;letter-spacing:.02em;">🎲 MOCK DRAFT &mdash; for demo purposes only. All 10 teams&#39; Keep/Protect are real; every live pick shown (rounds 1&ndash;3) is a simulated guess for planning purposes.</div>
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 MOCK -- Available Players (After 3 Rounds)</h1>
-  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
+  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring. Kept players stay listed (dimmed, not draftable) with a green tag showing who kept them; protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in -- use "Hide unavailable" to drop both from view. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
     <a class="nav-link" href="mock_draft_board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
@@ -227,18 +238,132 @@ function initials(name) {
   return (first + last).toUpperCase();
 }
 
+// --- Sleeper bio/photo lookup ---------------------------------------------
+// Sleeper's player API (api.sleeper.app) is public/no-auth but only offers a
+// single "give me every NFL player" endpoint -- ~5MB, no per-player lookup.
+// Their own docs say not to call it more than once/day, so this fetches it
+// at most that often, trims it down to just what the modal needs, and caches
+// the trimmed result in localStorage (this is a real deployed site, not a
+// Claude.ai artifact, so localStorage is fine to use here). Everything here
+// is wrapped so a failure -- offline, CORS, a name that doesn't match, no
+// cached data yet -- just means the modal keeps showing today's initials
+// avatar and skips the bio row. Nothing about the existing modal depends on
+// this succeeding.
+const SLEEPER_CACHE_KEY = 'tbmlSleeperPlayers_v1';
+const SLEEPER_MAX_AGE_MS = 20 * 60 * 60 * 1000; // under Sleeper's "once/day" guidance
+let sleeperDataPromise = null;
+
+function normalizeName(name) {
+  return String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+async function fetchSleeperPlayers() {
+  const res = await fetch('https://api.sleeper.app/v1/players/nfl');
+  if (!res.ok) throw new Error('Sleeper fetch failed: ' + res.status);
+  const raw = await res.json();
+  const trimmed = {};
+  for (const id in raw) {
+    const pl = raw[id];
+    if (!pl || !pl.search_full_name) continue;
+    trimmed[pl.search_full_name] = {
+      id: pl.player_id,
+      age: pl.age || null,
+      height: pl.height || null,
+      weight: pl.weight || null,
+      exp: (pl.years_exp === undefined || pl.years_exp === null) ? null : pl.years_exp,
+      injuryStatus: pl.injury_status || null,
+      college: pl.college || null,
+    };
+  }
+  return trimmed;
+}
+
+// Loads once per page (in-memory), refreshed from network at most once/day
+// (localStorage). Returns {} rather than throwing if anything goes wrong,
+// so callers never need their own try/catch.
+function getSleeperData() {
+  if (sleeperDataPromise) return sleeperDataPromise;
+  sleeperDataPromise = (async () => {
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(SLEEPER_CACHE_KEY)); } catch (e) { /* corrupt/missing cache -- refetch */ }
+    if (cached && cached.fetchedAt && (Date.now() - cached.fetchedAt) < SLEEPER_MAX_AGE_MS && cached.players) {
+      return cached.players;
+    }
+    try {
+      const players = await fetchSleeperPlayers();
+      try { localStorage.setItem(SLEEPER_CACHE_KEY, JSON.stringify({fetchedAt: Date.now(), players})); } catch (e) { /* storage full/unavailable -- still usable this page load */ }
+      return players;
+    } catch (e) {
+      return (cached && cached.players) || {}; // network/CORS failure -- fall back to stale cache if we have one
+    }
+  })();
+  return sleeperDataPromise;
+}
+
+function formatHeight(totalInches) {
+  const n = parseInt(totalInches, 10);
+  if (!n) return null;
+  return `${Math.floor(n / 12)}'${n % 12}"`;
+}
+
+function formatExp(years) {
+  if (years === null || years === undefined) return null;
+  return years === 0 ? 'Rookie' : `${years} yr${years === 1 ? '' : 's'}`;
+}
+
+// Rough severity ordering for color: Probable (mildest) -> IR/PUP (most
+// severe). An unrecognized future status Sleeper adds falls back to the
+// "Questionable" (yellow, least alarming-but-still-flagged) styling rather
+// than being hidden or defaulting to something scarier than warranted.
+function injuryBadgeClass(status) {
+  const map = {
+    Probable: 'injury-probable',
+    Questionable: 'injury-questionable',
+    Doubtful: 'injury-doubtful',
+    Out: 'injury-out',
+    Suspended: 'injury-suspended',
+    IR: 'injury-ir',
+    PUP: 'injury-pup',
+  };
+  return map[status] || 'injury-questionable';
+}
+
+// Populated once the page-load Sleeper fetch resolves (see the bottom of
+// this script); stays null until then, so applyInjuryBadges() is a safe
+// no-op if it's called before the data arrives -- the .then() callback that
+// sets this also re-runs it once, so nothing is stuck permanently blank.
+let sleeperDataCache = null;
+
+function applyInjuryBadges() {
+  if (!sleeperDataCache) return;
+  document.querySelectorAll('.row-injury-chip').forEach(el => {
+    const info = sleeperDataCache[normalizeName(el.dataset.name)];
+    if (info && info.injuryStatus) {
+      el.textContent = info.injuryStatus;
+      el.className = 'row-injury-chip ' + injuryBadgeClass(info.injuryStatus);
+      el.style.display = 'inline-block';
+    }
+  });
+}
+
+let currentModalPlayer = null;
+
 function openPlayerModal(name) {
   const p = DATA.pool.find(x => x.name === name);
   if (!p) return;
+  currentModalPlayer = name;
   const team = TEAM_STYLE[p.nflTeam] || TEAM_STYLE_FALLBACK;
   const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
   const ovrLabel = p.overallRank ? `#${p.overallRank}` : '&mdash;';
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-header" style="background:linear-gradient(rgba(15,23,32,0.55), rgba(15,23,32,0.55)), linear-gradient(135deg, ${team.primary}, ${team.secondary})">
       ${team.logo ? `<img class="modal-header-logo" src="${team.logo}" alt="" onerror="this.remove()">` : ''}
-      <div class="modal-avatar">${initials(p.name)}</div>
+      <div class="modal-avatar" id="modalAvatar">${initials(p.name)}</div>
       <div>
-        <div class="modal-chip">${statusChip(p)}</div>
+        <div class="modal-chip-row">
+          <div class="modal-chip">${statusChip(p)}</div>
+          <span class="injury-chip" id="modalInjuryChip" style="display:none;"></span>
+        </div>
         <div class="modal-header-name" id="modalName">${p.name}</div>
       </div>
     </div>
@@ -251,14 +376,69 @@ function openPlayerModal(name) {
         <div class="stat-pill"><div class="label">Pos rank</div><div class="value">${rankLabel}</div></div>
         <div class="stat-pill"><div class="label">Overall</div><div class="value">${ovrLabel}</div></div>
       </div>
+      <div class="stat-pills bio-pills" id="bioPills" style="display:none;"></div>
+      <div class="modal-college" id="modalCollege" style="display:none;"></div>
       <div class="modal-status-detail">${statusLine(p)}</div>
       <a class="modal-link" href="${yahooPlayerUrl(p)}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
+
+  // Team defenses don't have a meaningful bio -- skip the lookup entirely.
+  if (p.pos === 'DEF') return;
+
+  getSleeperData().then(players => {
+    if (currentModalPlayer !== name) return; // modal moved on to someone else (or closed) while this was loading
+    const info = players[normalizeName(p.name)];
+    if (!info) return; // no match -- initials avatar + no bio row stays as-is, silently
+
+    if (info.id) {
+      const avatarEl = document.getElementById('modalAvatar');
+      if (avatarEl) {
+        // data-fallback (not an inline JSON literal) so the initials string
+        // can't collide with the onerror attribute's own quoting -- a name
+        // producing a stray `"` there would otherwise break the markup.
+        avatarEl.innerHTML = `<img src="https://sleepercdn.com/content/nfl/players/${info.id}.jpg" alt="" data-fallback="${escAttr(initials(p.name))}" onerror="this.parentElement.textContent=this.dataset.fallback">`;
+      }
+    }
+
+    const bioStats = [
+      ['Age', info.age || null],
+      ['Height', formatHeight(info.height)],
+      ['Weight', info.weight ? `${info.weight} lbs` : null],
+      ['Exp', formatExp(info.exp)],
+    ].filter(([, v]) => v);
+    if (bioStats.length) {
+      const bioEl = document.getElementById('bioPills');
+      if (bioEl) {
+        bioEl.innerHTML = bioStats.map(([label, value]) =>
+          `<div class="stat-pill"><div class="label">${label}</div><div class="value">${value}</div></div>`
+        ).join('');
+        bioEl.style.display = '';
+      }
+    }
+
+    if (info.injuryStatus) {
+      const injuryEl = document.getElementById('modalInjuryChip');
+      if (injuryEl) {
+        injuryEl.textContent = info.injuryStatus;
+        injuryEl.className = 'injury-chip ' + injuryBadgeClass(info.injuryStatus);
+        injuryEl.style.display = '';
+      }
+    }
+
+    if (info.college) {
+      const collegeEl = document.getElementById('modalCollege');
+      if (collegeEl) {
+        collegeEl.textContent = info.college;
+        collegeEl.style.display = '';
+      }
+    }
+  }); // deliberately no .catch() -- getSleeperData() never rejects, it resolves to {} on any failure
 }
 
 function closePlayerModal() {
+  currentModalPlayer = null;
   document.getElementById('modalOverlay').classList.remove('open');
 }
 
@@ -316,7 +496,7 @@ function render(filterText) {
       const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${p.overallRank}` : '';
       row.innerHTML = `
-        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a></div>
+        <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></div>
         <div class="player-meta">${ovrLabel ? `<span class="overall-rank">${ovrLabel}</span>` : ''}<span>${p.nflTeam}</span>${statusBadges(p)}</div>
       `;
       grid.appendChild(row);
@@ -324,6 +504,7 @@ function render(filterText) {
     section.appendChild(grid);
     el.appendChild(section);
   });
+  applyInjuryBadges();
 }
 
 function renderOverall(filterText) {
@@ -349,13 +530,14 @@ function renderOverall(filterText) {
     tr.className = p.status !== 'available' ? 'unavailable' : '';
     tr.innerHTML = `
       <td class="overall-num">${p.overallRank ? '#' + p.overallRank : '&mdash;'}</td>
-      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a></td>
+      <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></td>
       <td><span class="pos-badge" style="background:${DATA.posColors[p.pos]}">${p.pos}</span></td>
       <td>${p.nflTeam}</td>
       <td>${statusBadges(p)}</td>
     `;
     tbody.appendChild(tr);
   });
+  applyInjuryBadges();
 }
 
 function renderActiveTab() {
@@ -421,6 +603,18 @@ document.getElementById('tabBtnOverall').addEventListener('click', () => setTab(
 // before the first render, so a reload lands back where you left off.
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
+
+// Kick off the Sleeper fetch as soon as the page loads (rather than waiting
+// for someone to open a player's modal) so injury badges next to names in
+// the list can populate without needing any interaction. applyInjuryBadges()
+// re-runs here once data's ready; it also runs at the end of every
+// render()/renderOverall() call above, covering the case where the data was
+// already cached (instant) and a re-render (search, collapse, hide toggle)
+// just needs to reapply it to the freshly rebuilt rows.
+getSleeperData().then(players => {
+  sleeperDataCache = players;
+  applyInjuryBadges();
+});
 
 // Real-time updates via the same SSE push as the other board pages (see
 // draft_app.py's /entry/events), gated by the same checkbox as before --
