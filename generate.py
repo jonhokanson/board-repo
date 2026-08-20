@@ -13,6 +13,14 @@ from yahoo_ids import YAHOO_IDS
 # generate.py is run standalone (e.g. `python3 generate.py` for a manual
 # regen).
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Shown in a small footer on every generated page so it's obvious at a glance
+# (including on Web01 itself, or in a screenshot) whether a deploy actually
+# landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
+# commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
+# milestone. Bump this by hand alongside any change worth shipping.
+APP_VERSION = "0.2.1.0"
+
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
 BOARD_OUT = os.path.join(BASE_DIR, "draft-board.html")
@@ -379,6 +387,7 @@ renderHead();
 renderLegend();
 renderBoard();
 </script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v{APP_VERSION}</div>
 </body>
 </html>
 """
@@ -1027,6 +1036,7 @@ try {{
 }} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
 setInterval(() => {{ if (autoRefreshEnabled && !sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
 </script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v{APP_VERSION}</div>
 </body>
 </html>
 """
@@ -1151,6 +1161,7 @@ document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolve
 renderSummary();
 renderGrid();
 </script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v{APP_VERSION}</div>
 </body>
 </html>
 """
