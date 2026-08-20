@@ -445,12 +445,25 @@ def render_available_players(pool, derived):
   .overall-table tr.unavailable td {{ opacity:0.42; }}
   .overall-num {{ font-weight:800; color:var(--accent); width:44px; }}
   .overall-table .pos-badge {{ font-size:10.5px; padding:2px 7px; }}
+  .modal-overlay {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); align-items:center; justify-content:center; z-index:1000; padding:20px; }}
+  .modal-overlay.open {{ display:flex; }}
+  .modal-panel {{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px 24px; max-width:420px; width:100%; position:relative; box-shadow:0 12px 40px rgba(0,0,0,0.5); }}
+  .modal-close {{ position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none; background:var(--panel-2); color:var(--text-dim); font-size:18px; cursor:pointer; line-height:1; }}
+  .modal-close:hover {{ color:var(--text); background:var(--border); }}
+  .modal-name {{ font-size:19px; font-weight:800; margin:0 0 8px; padding-right:24px; }}
+  .modal-sub {{ font-size:13px; color:var(--text-dim); margin-bottom:14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }}
+  .modal-row {{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--border); font-size:13.5px; }}
+  .modal-row:first-of-type {{ border-top:none; }}
+  .modal-row .k {{ color:var(--text-dim); }}
+  .modal-row .v {{ font-weight:600; text-align:right; }}
+  .modal-link {{ display:inline-block; margin-top:16px; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:7px 14px; border-radius:8px; }}
+  .modal-link:hover {{ background:rgba(59,167,255,0.1); }}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 Available Players</h1>
-  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Player names link directly to that player's Yahoo Sports page where a real ID has been looked up; everyone else falls back to a Yahoo Sports search link. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
+  <div class="sub">Every fantasy-relevant player across all 32 NFL teams, ranked within position for 2026 standard (non-PPR) scoring &mdash; minus known Keeps. Protected players stay listed (still draftable) with an orange tag showing whose protect pair they're in. Rankings and team assignments are current as of the last refresh; flag anything that looks off since roster/injury news keeps moving. Click a player's name for a quick details popup (position, rank, draft status), with a link out to their full Yahoo Sports profile. "Ovr" / the Overall Ranking tab reflect cross-position ADP-based draft value, sourced separately from each player's within-position rank.</div>
   <div class="nav-links">
     <a class="nav-link" href="draft-board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
@@ -482,6 +495,13 @@ def render_available_players(pool, derived):
       <tbody id="overallBody"></tbody>
     </table>
   </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalName">
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -507,6 +527,60 @@ function yahooPlayerUrl(p) {{
   const id = DATA.yahooIds[p.name];
   return id ? `https://sports.yahoo.com/nfl/players/${{id}}/` : yahooSearchUrl(p.name);
 }}
+
+// Used only for the data-name attribute on player links, so a name with a
+// quote or ampersand in it (there aren't any right now, but don't assume)
+// can't break the surrounding HTML.
+function escAttr(s) {{
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}}
+
+function statusLine(p) {{
+  if (p.status === 'kept') return `Kept by ${{p.pickInfo.team}}`;
+  if (p.status === 'picked') return `Picked ${{p.pickInfo.label}} by ${{p.pickInfo.team}}`;
+  if (p.status === 'protected') return `Guaranteed ${{p.pickInfo.label}} to ${{p.pickInfo.team}}`;
+  if (p.protectedBy) return `Available &mdash; protected by ${{p.protectedBy}} if drafted`;
+  return 'Available';
+}}
+
+function openPlayerModal(name) {{
+  const p = DATA.pool.find(x => x.name === name);
+  if (!p) return;
+  const rankLabel = p.rank ? `${{p.pos}}${{p.rank}}` : '&mdash;';
+  const ovrLabel = p.overallRank ? `#${{p.overallRank}} overall` : 'Unranked';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-name" id="modalName">${{p.name}}</div>
+    <div class="modal-sub">
+      <span class="pos-badge" style="background:${{DATA.posColors[p.pos]}}">${{p.pos}}</span>
+      <span>${{p.nflTeam}}</span>
+    </div>
+    <div class="modal-row"><span class="k">Position rank</span><span class="v">${{rankLabel}}</span></div>
+    <div class="modal-row"><span class="k">Overall rank</span><span class="v">${{ovrLabel}}</span></div>
+    <div class="modal-row"><span class="k">Draft status</span><span class="v">${{statusLine(p)}}</span></div>
+    <a class="modal-link" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}}
+
+function closePlayerModal() {{
+  document.getElementById('modalOverlay').classList.remove('open');
+}}
+
+document.getElementById('modalClose').addEventListener('click', closePlayerModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {{
+  if (e.target.id === 'modalOverlay') closePlayerModal();
+}});
+document.addEventListener('keydown', (e) => {{
+  if (e.key === 'Escape') closePlayerModal();
+}});
+// Delegated so it keeps working across every re-render (search, collapse,
+// tab switch) without needing to re-attach a listener per row.
+document.addEventListener('click', (e) => {{
+  const link = e.target.closest('.player-link');
+  if (!link) return;
+  e.preventDefault();
+  openPlayerModal(link.dataset.name);
+}});
 
 function render(filterText) {{
   const el = document.getElementById('sections');
@@ -546,7 +620,7 @@ function render(filterText) {{
       const rankLabel = p.rank ? `${{p.pos}}${{p.rank}}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${{p.overallRank}}` : '';
       row.innerHTML = `
-        <div class="player-name${{p.status !== 'available' ? ' strike' : ''}}"><span class="player-rank">${{rankLabel}}</span><a class="player-link" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">${{p.name}}</a></div>
+        <div class="player-name${{p.status !== 'available' ? ' strike' : ''}}"><span class="player-rank">${{rankLabel}}</span><a class="player-link" href="#" data-name="${{escAttr(p.name)}}">${{p.name}}</a></div>
         <div class="player-meta">${{ovrLabel ? `<span class="overall-rank">${{ovrLabel}}</span>` : ''}}<span>${{p.nflTeam}}</span>${{statusBadges(p)}}</div>
       `;
       grid.appendChild(row);
@@ -579,7 +653,7 @@ function renderOverall(filterText) {{
     tr.className = p.status !== 'available' ? 'unavailable' : '';
     tr.innerHTML = `
       <td class="overall-num">${{p.overallRank ? '#' + p.overallRank : '&mdash;'}}</td>
-      <td><a class="player-link${{p.status !== 'available' ? ' strike' : ''}}" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">${{p.name}}</a></td>
+      <td><a class="player-link${{p.status !== 'available' ? ' strike' : ''}}" href="#" data-name="${{escAttr(p.name)}}">${{p.name}}</a></td>
       <td><span class="pos-badge" style="background:${{DATA.posColors[p.pos]}}">${{p.pos}}</span></td>
       <td>${{p.nflTeam}}</td>
       <td>${{statusBadges(p)}}</td>
