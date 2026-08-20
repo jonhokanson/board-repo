@@ -466,7 +466,14 @@ def render_available_players(pool, derived):
   .modal-header > *:not(.modal-header-logo) {{ position:relative; z-index:1; }}
   .modal-avatar {{ flex-shrink:0; width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.35); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; letter-spacing:.02em; overflow:hidden; }}
   .modal-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
+  .modal-chip-row {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
   .modal-chip {{ display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; background:rgba(0,0,0,0.3); margin-bottom:6px; }}
+  .injury-chip {{ display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:5px; margin-bottom:6px; }}
+  .injury-questionable {{ background:#f5c423; color:#241a00; }}
+  .injury-probable {{ background:#4cbb79; color:#0c2016; }}
+  .injury-doubtful {{ background:#e07b1a; color:#fff; }}
+  .injury-out, .injury-suspended {{ background:#d13b3b; color:#fff; }}
+  .injury-ir, .injury-pup {{ background:#7a1f1f; color:#fff; }}
   .modal-header-name {{ font-size:19px; font-weight:800; line-height:1.15; }}
   .modal-teambar {{ background:var(--panel-2); padding:9px 20px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; border-bottom:1px solid var(--border); }}
   .modal-team-name {{ font-weight:700; font-size:13px; letter-spacing:.01em; }}
@@ -477,6 +484,7 @@ def render_available_players(pool, derived):
   .stat-pill .label {{ font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:4px; }}
   .stat-pill .value {{ font-size:14.5px; font-weight:800; }}
   .bio-pills .stat-pill .value {{ font-size:13px; }}
+  .modal-college {{ font-size:11.5px; color:var(--text-dim); text-align:center; margin:-4px 0 12px; }}
   .modal-status-detail {{ font-size:12.5px; color:var(--text-dim); text-align:center; margin-bottom:14px; }}
   .modal-link {{ display:block; text-align:center; font-size:13px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:9px 14px; border-radius:8px; }}
   .modal-link:hover {{ background:rgba(59,167,255,0.1); }}
@@ -654,6 +662,8 @@ async function fetchSleeperPlayers() {{
       height: pl.height || null,
       weight: pl.weight || null,
       exp: (pl.years_exp === undefined || pl.years_exp === null) ? null : pl.years_exp,
+      injuryStatus: pl.injury_status || null,
+      college: pl.college || null,
     }};
   }}
   return trimmed;
@@ -692,6 +702,23 @@ function formatExp(years) {{
   return years === 0 ? 'Rookie' : `${{years}} yr${{years === 1 ? '' : 's'}}`;
 }}
 
+// Rough severity ordering for color: Probable (mildest) -> IR/PUP (most
+// severe). An unrecognized future status Sleeper adds falls back to the
+// "Questionable" (yellow, least alarming-but-still-flagged) styling rather
+// than being hidden or defaulting to something scarier than warranted.
+function injuryBadgeClass(status) {{
+  const map = {{
+    Probable: 'injury-probable',
+    Questionable: 'injury-questionable',
+    Doubtful: 'injury-doubtful',
+    Out: 'injury-out',
+    Suspended: 'injury-suspended',
+    IR: 'injury-ir',
+    PUP: 'injury-pup',
+  }};
+  return map[status] || 'injury-questionable';
+}}
+
 let currentModalPlayer = null;
 
 function openPlayerModal(name) {{
@@ -706,7 +733,10 @@ function openPlayerModal(name) {{
       ${{team.logo ? `<img class="modal-header-logo" src="${{team.logo}}" alt="" onerror="this.remove()">` : ''}}
       <div class="modal-avatar" id="modalAvatar">${{initials(p.name)}}</div>
       <div>
-        <div class="modal-chip">${{statusChip(p)}}</div>
+        <div class="modal-chip-row">
+          <div class="modal-chip">${{statusChip(p)}}</div>
+          <span class="injury-chip" id="modalInjuryChip" style="display:none;"></span>
+        </div>
         <div class="modal-header-name" id="modalName">${{p.name}}</div>
       </div>
     </div>
@@ -720,6 +750,7 @@ function openPlayerModal(name) {{
         <div class="stat-pill"><div class="label">Overall</div><div class="value">${{ovrLabel}}</div></div>
       </div>
       <div class="stat-pills bio-pills" id="bioPills" style="display:none;"></div>
+      <div class="modal-college" id="modalCollege" style="display:none;"></div>
       <div class="modal-status-detail">${{statusLine(p)}}</div>
       <a class="modal-link" href="${{yahooPlayerUrl(p)}}" target="_blank" rel="noopener">View full profile on Yahoo &#8599;</a>
     </div>
@@ -757,6 +788,23 @@ function openPlayerModal(name) {{
           `<div class="stat-pill"><div class="label">${{label}}</div><div class="value">${{value}}</div></div>`
         ).join('');
         bioEl.style.display = '';
+      }}
+    }}
+
+    if (info.injuryStatus) {{
+      const injuryEl = document.getElementById('modalInjuryChip');
+      if (injuryEl) {{
+        injuryEl.textContent = info.injuryStatus;
+        injuryEl.className = 'injury-chip ' + injuryBadgeClass(info.injuryStatus);
+        injuryEl.style.display = '';
+      }}
+    }}
+
+    if (info.college) {{
+      const collegeEl = document.getElementById('modalCollege');
+      if (collegeEl) {{
+        collegeEl.textContent = info.college;
+        collegeEl.style.display = '';
       }}
     }}
   }}); // deliberately no .catch() -- getSleeperData() never rejects, it resolves to {{}} on any failure
