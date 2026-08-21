@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.4"
+APP_VERSION = "0.2.1.5"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -99,6 +99,14 @@ def build_derived_state(state, pool):
         if pk["name"] in pool_by_name:
             pool_by_name[pk["name"]]["status"] = "picked"
             pool_by_name[pk["name"]]["pickInfo"] = {"round": r, "team": team_at(teams, idx), "label": f"R{r}"}
+
+    # Tag every filled cell with its player's NFL team so the draft board can
+    # show a bye-week badge without needing the whole pool shipped to that
+    # page -- covers live picks, keepers, and guaranteed protects alike.
+    for row in [*picks_grid, keep_row, protect_row]:
+        for entry in row:
+            if entry and entry.get("name") and entry["name"] in pool_by_name:
+                entry["nflTeam"] = pool_by_name[entry["name"]].get("nflTeam")
 
     return {
         "teams": teams,
@@ -251,12 +259,14 @@ def render_draft_board(derived, state):
   tbody th.round-col {{ background:var(--panel-2); color:var(--text-dim); font-size:11px; text-align:center; padding:8px 4px; position:sticky; left:0; line-height:1.3; }}
   tbody tr.reserved.keep-row th.round-col {{ color:var(--keep); font-weight:700; }}
   tbody tr.reserved.protect-row th.round-col {{ color:var(--protect); font-weight:700; }}
-  td.pick {{ padding:8px 10px; vertical-align:top; min-width:118px; }}
+  td.pick {{ padding:8px 10px; vertical-align:top; min-width:118px; position:relative; }}
   .pick-num {{ font-size:10px; color:var(--text-dim); font-weight:600; }}
   .pos-filled .pick-num {{ color:rgba(11,15,20,.6); }}
   .pick-player {{ font-size:13px; margin-top:3px; color:var(--empty); }}
   .pick-player.filled {{ color:#0b0f14; font-weight:700; }}
   .pick-player.pending {{ font-style:italic; }}
+  .pick-bye {{ position:absolute; top:6px; right:8px; font-size:9.5px; font-weight:700; color:var(--text-dim); }}
+  .pos-filled .pick-bye {{ color:rgba(11,15,20,.55); }}
   .legend {{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }}
   .legend-item {{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }}
   .legend .dot {{ width:9px; height:9px; border-radius:50%; display:inline-block; }}
@@ -288,6 +298,19 @@ def render_draft_board(derived, state):
 <script>
 const STATE = {payload};
 
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release) -- kept
+// in sync by hand with the copy in draft-players.html's player-card modal.
+const TEAM_BYE = {{
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+}};
+
 function hexIsSet(pos) {{ return STATE.posColors[pos]; }}
 
 function overallPick(round, teamIndex, n) {{
@@ -297,7 +320,9 @@ function overallPick(round, teamIndex, n) {{
 
 function cellInner(label, entry) {{
   const filled = entry && entry.name;
-  return `<div class="pick-num">${{label}}</div><div class="pick-player${{filled ? ' filled' : ' pending'}}">${{filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}}</div>`;
+  const bye = filled && entry.nflTeam ? TEAM_BYE[entry.nflTeam] : null;
+  const byeBadge = bye ? `<div class="pick-bye">Bye ${{bye}}</div>` : '';
+  return `${{byeBadge}}<div class="pick-num">${{label}}</div><div class="pick-player${{filled ? ' filled' : ' pending'}}">${{filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}}</div>`;
 }}
 
 function applyPosStyle(td, entry) {{
