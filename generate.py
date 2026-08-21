@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.5"
+APP_VERSION = "0.2.1.6"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -195,19 +195,24 @@ def build_keep_protect_data(state, pool):
     for team in state["teams"]:
         info = state.get("keepers", {}).get(team, {})
         keep = info.get("keep")
+        if keep and keep.get("name") in pool_by_name:
+            # Copy rather than mutate -- keep dicts come straight from
+            # state.json and get reused across teams/regenerations.
+            keep = {**keep, "nflTeam": pool_by_name[keep["name"]].get("nflTeam")}
         protects = []
         for pname in info.get("protect", []):
             p = pool_by_name.get(pname)
             status = "pending"
             detail = None
             pos = p["pos"] if p else None
+            nfl_team = p.get("nflTeam") if p else None
             if p:
                 if p.get("status") == "protected":
                     status = "guaranteed"
                 elif p.get("status") == "picked":
                     status = "picked"
                     detail = p.get("pickInfo")
-            protects.append({"name": pname, "pos": pos, "status": status, "detail": detail})
+            protects.append({"name": pname, "pos": pos, "nflTeam": nfl_team, "status": status, "detail": detail})
         rows.append({"team": team, "keep": keep, "protects": protects})
     resolved = sum(1 for r in rows if any(pp["status"] == "guaranteed" for pp in r["protects"]))
     return {"rows": rows, "resolvedCount": resolved, "totalTeams": len(rows)}
@@ -938,9 +943,10 @@ function render(filterText) {{
       row.className = 'player-row' + (p.status !== 'available' ? ' unavailable' : '');
       const rankLabel = p.rank ? `${{p.pos}}${{p.rank}}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${{p.overallRank}}` : '';
+      const rowBye = TEAM_BYE[p.nflTeam] || null;
       row.innerHTML = `
         <div class="player-name${{p.status !== 'available' ? ' strike' : ''}}"><span class="player-rank">${{rankLabel}}</span><a class="player-link" href="#" data-name="${{escAttr(p.name)}}">${{p.name}}</a><span class="row-injury-chip" data-name="${{escAttr(p.name)}}"></span></div>
-        <div class="player-meta">${{ovrLabel ? `<span class="overall-rank">${{ovrLabel}}</span>` : ''}}<span>${{p.nflTeam}}</span>${{statusBadges(p)}}</div>
+        <div class="player-meta">${{ovrLabel ? `<span class="overall-rank">${{ovrLabel}}</span>` : ''}}<span>${{p.nflTeam}}${{rowBye ? ' &middot; Bye ' + rowBye : ''}}</span>${{statusBadges(p)}}</div>
       `;
       grid.appendChild(row);
     }});
@@ -971,11 +977,12 @@ function renderOverall(filterText) {{
   ranked.forEach(p => {{
     const tr = document.createElement('tr');
     tr.className = p.status !== 'available' ? 'unavailable' : '';
+    const rowBye = TEAM_BYE[p.nflTeam] || null;
     tr.innerHTML = `
       <td class="overall-num">${{p.overallRank ? '#' + p.overallRank : '&mdash;'}}</td>
       <td><a class="player-link${{p.status !== 'available' ? ' strike' : ''}}" href="#" data-name="${{escAttr(p.name)}}">${{p.name}}</a><span class="row-injury-chip" data-name="${{escAttr(p.name)}}"></span></td>
       <td><span class="pos-badge" style="background:${{DATA.posColors[p.pos]}}">${{p.pos}}</span></td>
-      <td>${{p.nflTeam}}</td>
+      <td>${{p.nflTeam}}${{rowBye ? ' &middot; Bye ' + rowBye : ''}}</td>
       <td>${{statusBadges(p)}}</td>
     `;
     tbody.appendChild(tr);
@@ -1114,6 +1121,7 @@ def render_keep_protect(kp_data, state):
   .kp-row:first-of-type {{ border-top:none; }}
   .kp-label {{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); flex-shrink:0; width:44px; }}
   .kp-name {{ font-size:13px; font-weight:600; flex:1 1 auto; min-width:0; }}
+  .kp-bye {{ font-size:10.5px; font-weight:400; color:var(--text-dim); flex-shrink:0; }}
   .kp-badge {{ font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; white-space:nowrap; margin-left:auto; }}
   .kp-row.keep .kp-label {{ color:var(--keep); }}
   .kp-row.pending .kp-label {{ color:var(--text-dim); }}
@@ -1156,6 +1164,24 @@ def render_keep_protect(kp_data, state):
 <script>
 const DATA = {payload};
 
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release) -- kept
+// in sync by hand with the copies on the draft board and player-card modal.
+const TEAM_BYE = {{
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+}};
+
+function byeBadge(entry) {{
+  const bye = entry && entry.nflTeam ? TEAM_BYE[entry.nflTeam] : null;
+  return bye ? `<span class="kp-bye">Bye ${{bye}}</span>` : '';
+}}
+
 function badgeFor(pp) {{
   if (pp.status === 'guaranteed') return 'Guaranteed &middot; R13';
   if (pp.status === 'picked') return `Picked &middot; R${{pp.detail.round}} &middot; ${{pp.detail.team}}`;
@@ -1171,10 +1197,10 @@ function renderGrid() {{
   const el = document.getElementById('kpGrid');
   el.innerHTML = DATA.rows.map(row => {{
     const keepRow = row.keep
-      ? `<div class="kp-row keep"><span class="kp-label">Keep</span><span class="kp-name">${{row.keep.name}}</span></div>`
+      ? `<div class="kp-row keep"><span class="kp-label">Keep</span><span class="kp-name">${{row.keep.name}}</span>${{byeBadge(row.keep)}}</div>`
       : '';
     const protectRows = row.protects.map(pp =>
-      `<div class="kp-row ${{pp.status}}"><span class="kp-label">Protect</span><span class="kp-name">${{pp.name}}</span><span class="kp-badge">${{badgeFor(pp)}}</span></div>`
+      `<div class="kp-row ${{pp.status}}"><span class="kp-label">Protect</span><span class="kp-name">${{pp.name}}</span>${{byeBadge(pp)}}<span class="kp-badge">${{badgeFor(pp)}}</span></div>`
     ).join('');
     return `<div class="kp-card"><div class="kp-team">${{row.team}}</div>${{keepRow}}${{protectRows}}</div>`;
   }}).join('');
