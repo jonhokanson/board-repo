@@ -70,7 +70,11 @@
 
   .wrap { position: relative; z-index: 1; }
   .side-photo {
-    position: fixed; top: 0; bottom: 0; width: 24vw; min-width: 200px; max-width: 380px;
+    position: fixed; top: 0; bottom: 0;
+    /* Scales with whatever room is left beside the 640px content column
+       (plus its 24px/side padding) instead of a fixed width, so it never
+       crowds the text on narrower tablets -- just shows a smaller sliver. */
+    width: clamp(50px, calc((100vw - 700px) / 2), 380px);
     object-fit: cover; opacity: 0.13; z-index: 0; pointer-events: none;
   }
   .side-photo.left {
@@ -83,7 +87,7 @@
     -webkit-mask-image: linear-gradient(to left, black 25%, transparent 90%);
     mask-image: linear-gradient(to left, black 25%, transparent 90%);
   }
-  @media (max-width: 980px) {
+  @media (max-width: 700px) {
     .side-photo { display: none; }
   }
 
@@ -173,7 +177,7 @@
       <span class="tag">Snake Draft</span>
       <span class="tag">Keep &amp; Protect</span>
     </div>
-    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.9</div>
+    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.10</div>
   </footer>
 </div>
 
