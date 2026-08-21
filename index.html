@@ -104,7 +104,7 @@
 <div class="wrap">
   <div class="kicker">Ted Brown Memorial League</div>
   <h1>🏈 2026 Draft</h1>
-  <div class="sub">10-team keeper snake draft &middot; offline / paper draft<br><strong>Saturday, August 29, 2026 &middot; 6:00 PM CT</strong></div>
+  <div class="sub"><strong>Saturday, August 29, 2026 &middot; 6:00 PM CT</strong></div>
 
   <div class="countdown" id="countdown">
     <div class="cell"><div class="num" id="cd-days">--</div><div class="label">Days</div></div>
@@ -152,7 +152,7 @@
       <span class="tag">Snake Draft</span>
       <span class="tag">Keep &amp; Protect</span>
     </div>
-    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.12</div>
+    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.13</div>
   </footer>
 </div>
 
@@ -169,9 +169,7 @@ function tick() {
     secs: document.getElementById('cd-secs'),
   };
   if (diff <= 0) {
-    els.days.textContent = '🏆';
-    els.hours.textContent = els.mins.textContent = els.secs.textContent = '--';
-    document.querySelector('.countdown').nextElementSibling; // no-op, keep layout
+    document.getElementById('countdown').style.display = 'none';
     clearInterval(timer);
     return;
   }
