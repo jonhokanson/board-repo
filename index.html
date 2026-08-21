@@ -68,6 +68,16 @@
   .qr-card .qr-caption { font-size: 12.5px; color: var(--text-dim); text-align: left; line-height: 1.5; }
   .qr-card .qr-caption strong { color: var(--text); }
 
+  .ted-card {
+    margin-bottom: 28px; padding: 16px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .ted-photos { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .ted-photo {
+    width: 110px; height: 110px; object-fit: cover; border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
   .links { display: flex; flex-direction: column; gap: 14px; }
   a.card {
     display: flex; align-items: center; gap: 14px; text-align: left;
@@ -105,6 +115,13 @@
   <div class="kicker">Ted Brown Memorial League</div>
   <h1>🏈 2026 Draft</h1>
   <div class="sub">10-team keeper snake draft &middot; offline / paper draft<br><strong>Saturday, August 29, 2026 &middot; 6:00 PM CT</strong></div>
+
+  <div class="ted-card">
+    <div class="ted-photos">
+      <img class="ted-photo" src="/ted-portrait.jpg" alt="Ted Brown">
+      <img class="ted-photo" src="/ted-trophy.jpg" alt="The Ted Brown Memorial League trophy">
+    </div>
+  </div>
 
   <div class="countdown" id="countdown">
     <div class="cell"><div class="num" id="cd-days">--</div><div class="label">Days</div></div>
@@ -152,7 +169,7 @@
       <span class="tag">Snake Draft</span>
       <span class="tag">Keep &amp; Protect</span>
     </div>
-    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.7</div>
+    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.1.8</div>
   </footer>
 </div>
 
