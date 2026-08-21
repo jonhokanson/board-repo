@@ -31,6 +31,7 @@
   .kp-row:first-of-type { border-top:none; }
   .kp-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); flex-shrink:0; width:44px; }
   .kp-name { font-size:13px; font-weight:600; flex:1 1 auto; min-width:0; }
+  .kp-bye { font-size:10.5px; font-weight:400; color:var(--text-dim); flex-shrink:0; }
   .kp-badge { font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; white-space:nowrap; margin-left:auto; }
   .kp-row.keep .kp-label { color:var(--keep); }
   .kp-row.pending .kp-label { color:var(--text-dim); }
@@ -71,7 +72,25 @@
 </div>
 
 <script>
-const DATA = {"rows": [{"team": "Chili Dogs", "keep": {"name": "Chase Brown", "pos": "RB", "nflTeam": "Cincinnati Bengals"}, "protects": [{"name": "Bijan Robinson", "pos": "RB", "status": "pending", "detail": null}, {"name": "Drake Maye", "pos": "QB", "status": "pending", "detail": null}]}, {"team": "Murphy's Law", "keep": {"name": "Saquon Barkley", "pos": "RB", "nflTeam": "Philadelphia Eagles"}, "protects": [{"name": "Marvin Harrison Jr.", "pos": "WR", "status": "pending", "detail": null}, {"name": "Kyren Williams", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Those Bastards", "keep": {"name": "Christian McCaffrey", "pos": "RB", "nflTeam": "San Francisco 49ers"}, "protects": [{"name": "Omarion Hampton", "pos": "RB", "status": "pending", "detail": null}, {"name": "Nico Collins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Just The Tip", "keep": {"name": "Derrick Henry", "pos": "RB", "nflTeam": "Baltimore Ravens"}, "protects": [{"name": "Josh Jacobs", "pos": "RB", "status": "pending", "detail": null}, {"name": "Terry McLaurin", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Easy Money", "keep": {"name": "Ja'Marr Chase", "pos": "WR", "nflTeam": "Cincinnati Bengals"}, "protects": [{"name": "Kenneth Walker", "pos": "RB", "status": "pending", "detail": null}, {"name": "Justin Jefferson", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Below Me", "keep": {"name": "Trey McBride", "pos": "TE", "nflTeam": "Arizona Cardinals"}, "protects": [{"name": "De'Von Achane", "pos": "RB", "status": "pending", "detail": null}, {"name": "Ashton Jeanty", "pos": "RB", "status": "pending", "detail": null}]}, {"team": "Hairy Beavers", "keep": {"name": "Jonathan Taylor", "pos": "RB", "nflTeam": "Indianapolis Colts"}, "protects": [{"name": "CeeDee Lamb", "pos": "WR", "status": "pending", "detail": null}, {"name": "Jaxon Smith-Njigba", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "IT Militia", "keep": {"name": "Josh Allen", "pos": "QB", "nflTeam": "Buffalo Bills"}, "protects": [{"name": "George Pickens", "pos": "WR", "status": "pending", "detail": null}, {"name": "Tee Higgins", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "I Know What I Did", "keep": {"name": "Jahmyr Gibbs", "pos": "RB", "nflTeam": "Detroit Lions"}, "protects": [{"name": "Puka Nacua", "pos": "WR", "status": "pending", "detail": null}, {"name": "Drake London", "pos": "WR", "status": "pending", "detail": null}]}, {"team": "Old No 7", "keep": {"name": "James Cook III", "pos": "RB", "nflTeam": "Buffalo Bills"}, "protects": [{"name": "Amon-Ra St. Brown", "pos": "WR", "status": "pending", "detail": null}, {"name": "A.J. Brown", "pos": "WR", "status": "pending", "detail": null}]}], "resolvedCount": 0, "totalTeams": 10};
+const DATA = {"rows": [{"team": "Chili Dogs", "keep": {"name": "Chase Brown", "pos": "RB", "nflTeam": "Cincinnati Bengals"}, "protects": [{"name": "Bijan Robinson", "pos": "RB", "nflTeam": "Atlanta Falcons", "status": "pending", "detail": null}, {"name": "Drake Maye", "pos": "QB", "nflTeam": "New England Patriots", "status": "pending", "detail": null}]}, {"team": "Murphy's Law", "keep": {"name": "Saquon Barkley", "pos": "RB", "nflTeam": "Philadelphia Eagles"}, "protects": [{"name": "Marvin Harrison Jr.", "pos": "WR", "nflTeam": "Arizona Cardinals", "status": "pending", "detail": null}, {"name": "Kyren Williams", "pos": "RB", "nflTeam": "Los Angeles Rams", "status": "pending", "detail": null}]}, {"team": "Those Bastards", "keep": {"name": "Christian McCaffrey", "pos": "RB", "nflTeam": "San Francisco 49ers"}, "protects": [{"name": "Omarion Hampton", "pos": "RB", "nflTeam": "Los Angeles Chargers", "status": "pending", "detail": null}, {"name": "Nico Collins", "pos": "WR", "nflTeam": "Houston Texans", "status": "pending", "detail": null}]}, {"team": "Just The Tip", "keep": {"name": "Derrick Henry", "pos": "RB", "nflTeam": "Baltimore Ravens"}, "protects": [{"name": "Josh Jacobs", "pos": "RB", "nflTeam": "Green Bay Packers", "status": "pending", "detail": null}, {"name": "Terry McLaurin", "pos": "WR", "nflTeam": "Washington Commanders", "status": "pending", "detail": null}]}, {"team": "Easy Money", "keep": {"name": "Ja'Marr Chase", "pos": "WR", "nflTeam": "Cincinnati Bengals"}, "protects": [{"name": "Kenneth Walker", "pos": "RB", "nflTeam": "Kansas City Chiefs", "status": "pending", "detail": null}, {"name": "Justin Jefferson", "pos": "WR", "nflTeam": "Minnesota Vikings", "status": "pending", "detail": null}]}, {"team": "Below Me", "keep": {"name": "Trey McBride", "pos": "TE", "nflTeam": "Arizona Cardinals"}, "protects": [{"name": "De'Von Achane", "pos": "RB", "nflTeam": "Miami Dolphins", "status": "pending", "detail": null}, {"name": "Ashton Jeanty", "pos": "RB", "nflTeam": "Las Vegas Raiders", "status": "pending", "detail": null}]}, {"team": "Hairy Beavers", "keep": {"name": "Jonathan Taylor", "pos": "RB", "nflTeam": "Indianapolis Colts"}, "protects": [{"name": "CeeDee Lamb", "pos": "WR", "nflTeam": "Dallas Cowboys", "status": "pending", "detail": null}, {"name": "Jaxon Smith-Njigba", "pos": "WR", "nflTeam": "Seattle Seahawks", "status": "pending", "detail": null}]}, {"team": "IT Militia", "keep": {"name": "Josh Allen", "pos": "QB", "nflTeam": "Buffalo Bills"}, "protects": [{"name": "George Pickens", "pos": "WR", "nflTeam": "Dallas Cowboys", "status": "pending", "detail": null}, {"name": "Tee Higgins", "pos": "WR", "nflTeam": "Cincinnati Bengals", "status": "pending", "detail": null}]}, {"team": "I Know What I Did", "keep": {"name": "Jahmyr Gibbs", "pos": "RB", "nflTeam": "Detroit Lions"}, "protects": [{"name": "Puka Nacua", "pos": "WR", "nflTeam": "Los Angeles Rams", "status": "pending", "detail": null}, {"name": "Drake London", "pos": "WR", "nflTeam": "Atlanta Falcons", "status": "pending", "detail": null}]}, {"team": "Old No 7", "keep": {"name": "James Cook III", "pos": "RB", "nflTeam": "Buffalo Bills"}, "protects": [{"name": "Amon-Ra St. Brown", "pos": "WR", "nflTeam": "Detroit Lions", "status": "pending", "detail": null}, {"name": "A.J. Brown", "pos": "WR", "nflTeam": "New England Patriots", "status": "pending", "detail": null}]}], "resolvedCount": 0, "totalTeams": 10};
+
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release) -- kept
+// in sync by hand with the copies on the draft board and player-card modal.
+const TEAM_BYE = {
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+};
+
+function byeBadge(entry) {
+  const bye = entry && entry.nflTeam ? TEAM_BYE[entry.nflTeam] : null;
+  return bye ? `<span class="kp-bye">Bye ${bye}</span>` : '';
+}
 
 function badgeFor(pp) {
   if (pp.status === 'guaranteed') return 'Guaranteed &middot; R13';
@@ -88,10 +107,10 @@ function renderGrid() {
   const el = document.getElementById('kpGrid');
   el.innerHTML = DATA.rows.map(row => {
     const keepRow = row.keep
-      ? `<div class="kp-row keep"><span class="kp-label">Keep</span><span class="kp-name">${row.keep.name}</span></div>`
+      ? `<div class="kp-row keep"><span class="kp-label">Keep</span><span class="kp-name">${row.keep.name}</span>${byeBadge(row.keep)}</div>`
       : '';
     const protectRows = row.protects.map(pp =>
-      `<div class="kp-row ${pp.status}"><span class="kp-label">Protect</span><span class="kp-name">${pp.name}</span><span class="kp-badge">${badgeFor(pp)}</span></div>`
+      `<div class="kp-row ${pp.status}"><span class="kp-label">Protect</span><span class="kp-name">${pp.name}</span>${byeBadge(pp)}<span class="kp-badge">${badgeFor(pp)}</span></div>`
     ).join('');
     return `<div class="kp-card"><div class="kp-team">${row.team}</div>${keepRow}${protectRows}</div>`;
   }).join('');
@@ -115,6 +134,6 @@ document.getElementById('updated').textContent = 'Last updated: ' + DATA.resolve
 renderSummary();
 renderGrid();
 </script>
-<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.5</div>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.6</div>
 </body>
 </html>

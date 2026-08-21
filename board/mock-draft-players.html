@@ -512,9 +512,10 @@ function render(filterText) {
       row.className = 'player-row' + (p.status !== 'available' ? ' unavailable' : '');
       const rankLabel = p.rank ? `${p.pos}${p.rank}` : '&mdash;';
       const ovrLabel = p.overallRank ? `Ovr ${p.overallRank}` : '';
+      const rowBye = TEAM_BYE[p.nflTeam] || null;
       row.innerHTML = `
         <div class="player-name${p.status !== 'available' ? ' strike' : ''}"><span class="player-rank">${rankLabel}</span><a class="player-link" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></div>
-        <div class="player-meta">${ovrLabel ? `<span class="overall-rank">${ovrLabel}</span>` : ''}<span>${p.nflTeam}</span>${statusBadges(p)}</div>
+        <div class="player-meta">${ovrLabel ? `<span class="overall-rank">${ovrLabel}</span>` : ''}<span>${p.nflTeam}${rowBye ? ' &middot; Bye ' + rowBye : ''}</span>${statusBadges(p)}</div>
       `;
       grid.appendChild(row);
     });
@@ -545,11 +546,12 @@ function renderOverall(filterText) {
   ranked.forEach(p => {
     const tr = document.createElement('tr');
     tr.className = p.status !== 'available' ? 'unavailable' : '';
+    const rowBye = TEAM_BYE[p.nflTeam] || null;
     tr.innerHTML = `
       <td class="overall-num">${p.overallRank ? '#' + p.overallRank : '&mdash;'}</td>
       <td><a class="player-link${p.status !== 'available' ? ' strike' : ''}" href="#" data-name="${escAttr(p.name)}">${p.name}</a><span class="row-injury-chip" data-name="${escAttr(p.name)}"></span></td>
       <td><span class="pos-badge" style="background:${DATA.posColors[p.pos]}">${p.pos}</span></td>
-      <td>${p.nflTeam}</td>
+      <td>${p.nflTeam}${rowBye ? ' &middot; Bye ' + rowBye : ''}</td>
       <td>${statusBadges(p)}</td>
     `;
     tbody.appendChild(tr);
@@ -647,6 +649,6 @@ try {
 } catch (e) { /* EventSource unsupported -- safety poll below covers it */ }
 setInterval(() => { if (!sseConnected) location.reload(); }, SAFETY_POLL_SECONDS * 1000);
 </script>
-<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.5</div>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.6</div>
 </body>
 </html>
