@@ -42,6 +42,7 @@ LOCK_PATH = STATE_PATH + ".lock"
 BOARD_OUT = os.environ.get("BOARD_OUT", os.path.join(BASE_DIR, "draft-board.html"))
 LIST_OUT = os.environ.get("LIST_OUT", os.path.join(BASE_DIR, "draft-players.html"))
 KP_OUT = os.environ.get("KP_OUT", os.path.join(BASE_DIR, "keep-protect.html"))
+GRADES_OUT_DIR = os.environ.get("GRADES_OUT_DIR", os.path.join(BASE_DIR, "grades"))
 
 # Local git working copy to push backups from -- separate from the paths
 # above so a slow/failed git push can never block or corrupt what's served.
@@ -109,9 +110,16 @@ def regenerate_pages(state, pool):
     list_html = g.render_available_players(pool, derived)
     kp_data = g.build_keep_protect_data(state, pool)
     kp_html = g.render_keep_protect(kp_data, state)
+    grades = g.compute_team_grades(state, pool)
     open(BOARD_OUT, "w").write(board_html)
     open(LIST_OUT, "w").write(list_html)
     open(KP_OUT, "w").write(kp_html)
+
+    os.makedirs(GRADES_OUT_DIR, exist_ok=True)
+    for team in state["teams"]:
+        page_path = os.path.join(GRADES_OUT_DIR, f"grade-{g.team_slug(team)}.html")
+        open(page_path, "w").write(g.render_grade_page(grades[team], state))
+    open(os.path.join(GRADES_OUT_DIR, "grades.html"), "w").write(g.render_grades_hub(grades, state))
 
 
 def push_backup(message, state):
@@ -127,7 +135,7 @@ def push_backup(message, state):
         if STATE_BACKUP_PATH:
             with open(STATE_BACKUP_PATH, "w") as f:
                 json.dump(state, f, indent=2)
-        tracked = [p for p in (BOARD_OUT, LIST_OUT, KP_OUT, STATE_BACKUP_PATH) if p]
+        tracked = [p for p in (BOARD_OUT, LIST_OUT, KP_OUT, GRADES_OUT_DIR, STATE_BACKUP_PATH) if p]
         subprocess.run(["git", "-C", GIT_REPO_DIR, "add", "--"] + tracked, check=True, capture_output=True, timeout=10)
         diff = subprocess.run(
             ["git", "-C", GIT_REPO_DIR, "diff", "--cached", "--quiet"], capture_output=True, timeout=10

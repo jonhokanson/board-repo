@@ -3,7 +3,9 @@
 Re-run this after editing state.json (adding a pick, resolving a protect, etc.)
 to regenerate both pages in sync."""
 import json
+import math
 import os
+import re
 from yahoo_ids import YAHOO_IDS
 
 # Paths are relative to this file's own location, not hardcoded, so this
@@ -19,13 +21,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.1.14"
+APP_VERSION = "0.2.2.0"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
 BOARD_OUT = os.path.join(BASE_DIR, "draft-board.html")
 LIST_OUT = os.path.join(BASE_DIR, "draft-players.html")
 KP_OUT = os.path.join(BASE_DIR, "keep-protect.html")
+GRADES_DIR = os.path.join(BASE_DIR, "grades")
 
 POS_ORDER = ["QB", "RB", "WR", "TE", "K", "DEF"]
 POS_COLORS = {
@@ -218,6 +221,146 @@ def build_keep_protect_data(state, pool):
     return {"rows": rows, "resolvedCount": resolved, "totalTeams": len(rows)}
 
 
+# ---------------------------------------------------------------------------
+# Draft grades
+#
+# Value model: for every LIVE pick (state["picks"] only -- keepers and
+# guaranteed protects are pre-set roster slots, not draft-day decisions, so
+# they're excluded from scoring and just displayed as reference rows), compare
+# the round it was actually taken against the round its overall ADP rank
+# (pool.json's `overallRank`, cross-position, n teams/round) implies it
+# "should" have gone in: expectedRound = ceil(overallRank / n). A player who
+# falls past that round is a value pick (positive score = rounds of value);
+# one taken before it is a reach (negative). Averaging that across a team's
+# picks -- overall and per position -- gives an honest, fully-automatic grade
+# with no subjective input. Players with no ADP match (deep bench, mostly
+# K/DEF) are shown but excluded from scoring since there's nothing to compare
+# against.
+# ---------------------------------------------------------------------------
+
+GRADE_POSITIONS = ["QB", "RB", "WR", "TE"]
+
+# (minimum average value score, letter) checked top-down. Tuned so a
+# perfectly-at-ADP team (avg 0) lands a solid B, and grades move roughly a
+# third of a letter per quarter-round of average value -- adjust freely once
+# real draft results give a feel for the actual spread.
+GRADE_BANDS = [
+    (1.75, "A+"), (1.15, "A"), (0.65, "A-"),
+    (0.30, "B+"), (-0.05, "B"), (-0.35, "B-"),
+    (-0.70, "C+"), (-1.15, "C"), (-1.75, "C-"),
+]
+
+STEAL_THRESHOLD = 2.0   # rounds of value to earn a "STEAL" tag
+REACH_THRESHOLD = -2.0  # rounds of value to earn a "REACH" tag
+
+
+def letter_grade(avg_value):
+    if avg_value is None:
+        return "—"
+    for threshold, grade in GRADE_BANDS:
+        if avg_value >= threshold:
+            return grade
+    return "D"
+
+
+def team_slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def compute_team_grades(state, pool):
+    """Returns {team_name: grade_data} for every team, built purely from
+    state["picks"] + pool.json's overallRank -- safe to call at any point
+    during the draft (including pre-draft, when picks is empty)."""
+    teams = state["teams"]
+    n = len(teams)
+    live_rounds = state["liveRounds"]
+    pool_by_name = {p["name"]: p for p in pool}
+
+    picks_by_team = {t: [] for t in teams}
+    for pk in state.get("picks", []):
+        picks_by_team.setdefault(pk["team"], []).append(pk)
+
+    grades = {}
+    for idx, team in enumerate(teams):
+        team_picks = sorted(picks_by_team.get(team, []), key=lambda p: p["round"])
+        rows = []
+        for pk in team_picks:
+            info = pool_by_name.get(pk["name"], {})
+            overall_rank = info.get("overallRank")
+            value = None
+            tag = None
+            if overall_rank:
+                expected_round = math.ceil(overall_rank / n)
+                value = pk["round"] - expected_round
+                if value >= STEAL_THRESHOLD:
+                    tag = "STEAL"
+                elif value <= REACH_THRESHOLD:
+                    tag = "REACH"
+            rows.append({
+                "round": pk["round"], "name": pk["name"], "pos": pk["pos"],
+                "nflTeam": info.get("nflTeam"), "value": value, "tag": tag,
+            })
+
+        # Keeper / guaranteed-protect rows: reference-only, never scored.
+        keep = state.get("keepers", {}).get(team, {}).get("keep")
+        if keep:
+            keep_info = pool_by_name.get(keep["name"], {})
+            rows.append({
+                "round": 14, "name": keep["name"], "pos": keep["pos"],
+                "nflTeam": keep_info.get("nflTeam"), "value": None, "tag": "KEPT",
+            })
+        guaranteed = state.get("protectResolution", {}).get(team, {}).get("guaranteed")
+        # Defensive: a guaranteed protect player should never also show up as
+        # one of this team's own live picks (the moment the pair resolves,
+        # build_derived_state removes them from the available pool) -- but
+        # don't let a data-entry slip during the live draft render a
+        # confusing duplicate row if it ever happens anyway.
+        if guaranteed and guaranteed["name"] in {r["name"] for r in rows}:
+            guaranteed = None
+        if guaranteed:
+            g_info = pool_by_name.get(guaranteed["name"], {})
+            rows.append({
+                "round": 13, "name": guaranteed["name"], "pos": guaranteed["pos"],
+                "nflTeam": g_info.get("nflTeam"), "value": None, "tag": "PROTECTED",
+            })
+        rows.sort(key=lambda r: r["round"])
+
+        valued = [r for r in rows if r["value"] is not None]
+        avg_value = sum(r["value"] for r in valued) / len(valued) if valued else None
+
+        pos_grades = {}
+        for pos in GRADE_POSITIONS:
+            pos_valued = [r for r in valued if r["pos"] == pos]
+            if pos_valued:
+                pos_avg = sum(r["value"] for r in pos_valued) / len(pos_valued)
+                # Center a dead-on-ADP team (avg 0) at 50% fill; each round of
+                # value/reach moves the bar ~22%, clamped to a readable range.
+                pct = max(8, min(100, round(50 + pos_avg * 22)))
+                pos_grades[pos] = {"grade": letter_grade(pos_avg), "avg": pos_avg, "pct": pct}
+            else:
+                pos_grades[pos] = None
+
+        best_value = max(valued, key=lambda r: r["value"], default=None)
+        biggest_reach = min(valued, key=lambda r: r["value"], default=None)
+        graded_pos = {p: g for p, g in pos_grades.items() if g}
+        weakest_pos = min(graded_pos.items(), key=lambda kv: kv[1]["avg"], default=(None, None))
+
+        grades[team] = {
+            "team": team,
+            "slot": idx + 1,
+            "rows": rows,
+            "avgValue": avg_value,
+            "grade": letter_grade(avg_value),
+            "posGrades": pos_grades,
+            "bestValue": best_value,
+            "biggestReach": biggest_reach,
+            "weakestPos": weakest_pos[0],
+            "roundsPicked": len(team_picks),
+            "liveRounds": live_rounds,
+        }
+    return grades
+
+
 def render_draft_board(derived, state):
     payload = json.dumps({
         "teams": derived["teams"],
@@ -291,6 +434,7 @@ def render_draft_board(derived, state):
     <div class="nav-links">
       <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
       <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
+      <a class="nav-link" href="grades/grades.html">Draft Grades &rarr;</a>
     </div>
   </header>
 
@@ -542,6 +686,7 @@ def render_available_players(pool, derived):
   <div class="nav-links">
     <a class="nav-link" href="draft-board.html">&larr; Back to draft board</a>
     <a class="nav-link" href="keep-protect.html">Keep/Protect tracker &rarr;</a>
+    <a class="nav-link" href="grades/grades.html">Draft Grades &rarr;</a>
   </div>
 
   <div class="tabs">
@@ -1158,6 +1303,7 @@ def render_keep_protect(kp_data, state):
     <div class="nav-links">
       <a class="nav-link" href="draft-board.html">&larr; Back to draft board</a>
       <a class="nav-link" href="draft-players.html">View available players &rarr;</a>
+      <a class="nav-link" href="grades/grades.html">Draft Grades &rarr;</a>
     </div>
   </header>
 
@@ -1242,6 +1388,254 @@ renderGrid();
 """
 
 
+def _pos_badge(pos):
+    color = POS_COLORS.get(pos, "#93a4b3")
+    return f'<span style="font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:4px;color:#0b0f14;background:{color};">{pos}</span>'
+
+
+def _grade_tag(tag):
+    if tag == "STEAL":
+        return '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:rgba(51,193,122,0.15);color:var(--keep);">Steal</span>'
+    if tag == "REACH":
+        return '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:rgba(226,86,79,0.15);color:#e2564f;">Reach</span>'
+    if tag == "KEPT":
+        return '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:rgba(51,193,122,0.15);color:var(--keep);">Kept</span>'
+    if tag == "PROTECTED":
+        return '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:rgba(245,166,35,0.15);color:var(--protect);">Protected</span>'
+    return ''
+
+
+def _value_label(row):
+    if row["value"] is None:
+        return ''
+    sign = "+" if row["value"] > 0 else ""
+    return f'<span style="font-size:10px;color:var(--text-dim);">{sign}{row["value"]} rd</span>'
+
+
+def render_grade_page(g, state):
+    team = g["team"]
+    league = state.get("leagueName", "Ted Brown Memorial League")
+    live_rounds = g["liveRounds"]
+    rounds_picked = g["roundsPicked"]
+
+    started = rounds_picked > 0
+    grade_display = g["grade"] if started else "—"
+    if started and rounds_picked < live_rounds:
+        status_line = f"Live grade &middot; {rounds_picked} of {live_rounds} rounds picked &middot; updates as picks land"
+    elif started:
+        status_line = f"Final grade &middot; all {live_rounds} live rounds picked"
+    else:
+        status_line = "Grade pending &mdash; check back once the draft gets underway"
+
+    def stat_tile(label, color, value_html, sub_html):
+        return f'''<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:{color};margin-bottom:8px;">{label}</div>
+        <div style="font-size:15px;font-weight:700;">{value_html}</div>
+        <div style="font-size:12px;color:var(--text-dim);">{sub_html}</div>
+      </div>'''
+
+    if g["bestValue"]:
+        bv = g["bestValue"]
+        best_value_tile = stat_tile("Best Value", "var(--keep)", bv["name"], f'Round {bv["round"]} &middot; +{bv["value"]} rd vs ADP')
+    else:
+        best_value_tile = stat_tile("Best Value", "var(--keep)", "—", "No graded picks yet")
+
+    if g["biggestReach"] and g["biggestReach"]["value"] is not None and g["biggestReach"]["value"] < 0:
+        br = g["biggestReach"]
+        reach_tile = stat_tile("Biggest Reach", "#e2564f", br["name"], f'Round {br["round"]} &middot; {br["value"]} rd vs ADP')
+    else:
+        reach_tile = stat_tile("Biggest Reach", "#e2564f", "—", "No reaches yet")
+
+    if g["avgValue"] is not None:
+        sign = "+" if g["avgValue"] > 0 else ""
+        value_score_tile = stat_tile("Value Score", "var(--accent)", f'{sign}{g["avgValue"]:.1f} rd avg', "Rounds of value per pick")
+    else:
+        value_score_tile = stat_tile("Value Score", "var(--accent)", "—", "Not enough picks yet")
+
+    if g["weakestPos"]:
+        wp = g["weakestPos"]
+        wp_grade = g["posGrades"][wp]["grade"]
+        weakest_tile = stat_tile("Weakest Position", "var(--protect)", f'{wp} ({wp_grade})', "Lowest positional grade")
+    else:
+        weakest_tile = stat_tile("Weakest Position", "var(--protect)", "—", "Not enough picks yet")
+
+    pos_bars = []
+    for pos in GRADE_POSITIONS:
+        pg = g["posGrades"].get(pos)
+        if pg:
+            pct, grade_letter, fill = pg["pct"], pg["grade"], POS_COLORS.get(pos, "#93a4b3")
+        else:
+            pct, grade_letter, fill = 0, "—", "#2a3a48"
+        pos_bars.append(f'''<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:28px;font-size:11px;font-weight:800;color:var(--text-dim);">{pos}</div>
+        <div style="flex:1;height:8px;border-radius:5px;background:var(--panel-2);overflow:hidden;"><div style="width:{pct}%;height:100%;background:{fill};"></div></div>
+        <div style="width:26px;font-size:12px;font-weight:700;text-align:right;">{grade_letter}</div>
+      </div>''')
+    pos_bars_html = ''.join(pos_bars)
+
+    pick_rows = []
+    for row in g["rows"]:
+        pick_rows.append(f'''<div style="display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
+        <span style="font-size:11px;color:var(--text-dim);width:22px;flex-shrink:0;">R{row["round"]}</span>
+        <span style="font-size:12.5px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{row["name"]}</span>
+        {_pos_badge(row["pos"])}
+        {_grade_tag(row["tag"])}
+      </div>''')
+    pick_rows_html = ''.join(pick_rows) if pick_rows else '<div style="font-size:12.5px;color:var(--text-dim);grid-column:1 / -1;text-align:center;padding:12px;">No picks yet.</div>'
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{team} &middot; TBML 2026 Draft Grade</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<style>
+  :root {{
+    --bg: #0f1720; --panel: #16212c; --panel-2: #1c2a37; --border: #2a3a48;
+    --text: #e8edf2; --text-dim: #93a4b3; --accent: #3ba7ff; --accent-bg: rgba(59,167,255,0.12);
+    --keep: #33c17a; --protect: #f5a623;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); }}
+  a {{ color: var(--accent); }}
+  a:hover {{ color: #6cc0ff; }}
+  .home-link {{ color:inherit; text-decoration:none; }}
+  .home-link:hover {{ color:var(--accent); text-decoration:underline; }}
+  .nav-link {{ display:inline-block; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; }}
+  /* Two-column roster grid gets cramped on phone widths -- long names plus
+     a STEAL/REACH tag start truncating. Single column below 520px gives
+     each row the full content width instead. */
+  @media (max-width: 520px) {{
+    .roster-grid {{ grid-template-columns: 1fr !important; }}
+  }}
+</style>
+</head>
+<body>
+<div style="min-height:100%; background: radial-gradient(circle at 20% 0%, rgba(59,167,255,0.12), transparent 50%), var(--bg); padding:0 0 36px;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0;flex-wrap:wrap;gap:8px;">
+    <a class="nav-link" href="grades.html">&larr; All Grades</a>
+    <a class="nav-link home-link" href="../draft-board.html">Draft Board</a>
+  </div>
+
+  <div style="text-align:center;padding:22px 24px 26px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">{league} &middot; 2026 Draft Recap</div>
+    <div style="width:104px;height:104px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:2.8rem;font-weight:800;color:var(--accent);margin:0 auto 14px;">{grade_display}</div>
+    <h1 style="font-size:1.9rem;font-weight:800;margin:0 0 4px;letter-spacing:-0.01em;"><a class="home-link" href="/" title="Back to TBML draft home">{team}</a></h1>
+    <div style="color:var(--text-dim);font-size:13px;">Draft Slot #{g["slot"]} &middot; {status_line}</div>
+  </div>
+
+  <div style="padding:0 24px;max-width:760px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:12px;margin-bottom:22px;">
+      {best_value_tile}
+      {reach_tile}
+      {value_score_tile}
+      {weakest_tile}
+    </div>
+
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:22px;">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:12px;">Positional Grades</div>
+      {pos_bars_html}
+    </div>
+
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:10px;">Full Roster</div>
+    <div class="roster-grid" style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:8px;margin-bottom:18px;">
+      {pick_rows_html}
+    </div>
+
+    <div style="font-size:11px;color:var(--text-dim);opacity:0.6;text-align:center;">Value score compares each pick's round to its ADP-implied round (fantasyfootballcalculator.com consensus). Keepers and guaranteed protects aren't scored.</div>
+  </div>
+</div>
+<script>
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {{
+  const es = new EventSource('/entry/events');
+  es.onopen = () => {{ sseConnected = true; }};
+  es.onmessage = () => location.reload();
+  es.onerror = () => {{ if (es.readyState === EventSource.CLOSED) sseConnected = false; }};
+}} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
+setInterval(() => {{ if (!sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
+</script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:6px 0 22px;">TBML Draft Tool &middot; v{APP_VERSION}</div>
+</body>
+</html>
+"""
+
+
+def render_grades_hub(grades, state):
+    league = state.get("leagueName", "Ted Brown Memorial League")
+    cards = []
+    for team in state["teams"]:
+        g = grades[team]
+        started = g["roundsPicked"] > 0
+        grade_display = g["grade"] if started else "—"
+        sub = f'{g["roundsPicked"]} of {g["liveRounds"]} rounds' if started else "Not started"
+        slug = team_slug(team)
+        cards.append(f'''<a href="grade-{slug}.html" style="display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit;">
+      <div style="flex-shrink:0;width:52px;height:52px;border-radius:12px;background:var(--accent-bg);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:var(--accent);">{grade_display}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{team}</div>
+        <div style="font-size:12px;color:var(--text-dim);">Slot #{g["slot"]} &middot; {sub}</div>
+      </div>
+      <div style="color:var(--accent);font-size:14px;">&rarr;</div>
+    </a>''')
+    cards_html = ''.join(cards)
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TBML 2026 Draft Grades</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<style>
+  :root {{
+    --bg: #0f1720; --panel: #16212c; --panel-2: #1c2a37; --border: #2a3a48;
+    --text: #e8edf2; --text-dim: #93a4b3; --accent: #3ba7ff; --accent-bg: rgba(59,167,255,0.12);
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); padding:24px; }}
+  .wrap {{ max-width:640px; margin:0 auto; }}
+  h1 {{ font-size:22px; margin:0 0 4px; font-weight:700; letter-spacing:-0.01em; }}
+  .home-link {{ color:inherit; text-decoration:none; }}
+  .home-link:hover {{ color:var(--accent); text-decoration:underline; }}
+  .nav-link {{ display:inline-block; font-size:12px; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 10px; border-radius:6px; margin-top:10px; margin-bottom:20px; }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 Draft Grades</h1>
+  <div style="color:var(--text-dim);font-size:13px;">{league}</div>
+  <a class="nav-link" href="../draft-board.html">&larr; Back to draft board</a>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {cards_html}
+  </div>
+</div>
+<script>
+const SAFETY_POLL_SECONDS = 30;
+let sseConnected = false;
+try {{
+  const es = new EventSource('/entry/events');
+  es.onopen = () => {{ sseConnected = true; }};
+  es.onmessage = () => location.reload();
+  es.onerror = () => {{ if (es.readyState === EventSource.CLOSED) sseConnected = false; }};
+}} catch (e) {{ /* EventSource unsupported -- safety poll below covers it */ }}
+setInterval(() => {{ if (!sseConnected) location.reload(); }}, SAFETY_POLL_SECONDS * 1000);
+</script>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v{APP_VERSION}</div>
+</body>
+</html>
+"""
+
+
 def main():
     pool = json.load(open(POOL_PATH))
     state = json.load(open(STATE_PATH))
@@ -1251,6 +1645,7 @@ def main():
     list_html = render_available_players(pool, derived)
     kp_data = build_keep_protect_data(state, pool)
     kp_html = render_keep_protect(kp_data, state)
+    grades = compute_team_grades(state, pool)
 
     open(BOARD_OUT, "w").write(board_html)
     open(LIST_OUT, "w").write(list_html)
@@ -1258,6 +1653,14 @@ def main():
     print("Wrote", BOARD_OUT)
     print("Wrote", LIST_OUT)
     print("Wrote", KP_OUT)
+
+    os.makedirs(GRADES_DIR, exist_ok=True)
+    for team in state["teams"]:
+        page_path = os.path.join(GRADES_DIR, f"grade-{team_slug(team)}.html")
+        open(page_path, "w").write(render_grade_page(grades[team], state))
+    hub_path = os.path.join(GRADES_DIR, "grades.html")
+    open(hub_path, "w").write(render_grades_hub(grades, state))
+    print("Wrote", GRADES_DIR, f"({len(state['teams'])} team pages + hub)")
 
 
 if __name__ == "__main__":
