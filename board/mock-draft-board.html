@@ -31,12 +31,14 @@
   tbody th.round-col { background:var(--panel-2); color:var(--text-dim); font-size:11px; text-align:center; padding:8px 4px; position:sticky; left:0; line-height:1.3; }
   tbody tr.reserved.keep-row th.round-col { color:var(--keep); font-weight:700; }
   tbody tr.reserved.protect-row th.round-col { color:var(--protect); font-weight:700; }
-  td.pick { padding:8px 10px; vertical-align:top; min-width:118px; }
+  td.pick { padding:8px 10px; vertical-align:top; min-width:118px; position:relative; }
   .pick-num { font-size:10px; color:var(--text-dim); font-weight:600; }
   .pos-filled .pick-num { color:rgba(11,15,20,.6); }
   .pick-player { font-size:13px; margin-top:3px; color:var(--empty); }
   .pick-player.filled { color:#0b0f14; font-weight:700; }
   .pick-player.pending { font-style:italic; }
+  .pick-bye { position:absolute; top:6px; right:8px; font-size:9.5px; font-weight:700; color:var(--text-dim); }
+  .pos-filled .pick-bye { color:rgba(11,15,20,.55); }
   .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
   .legend-item { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }
   .legend .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
@@ -67,7 +69,20 @@
 </div>
 
 <script>
-const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[{"name": "Bijan Robinson", "pos": "RB"}, {"name": "Puka Nacua", "pos": "WR"}, {"name": "De'Von Achane", "pos": "RB"}, {"name": "Jaxon Smith-Njigba", "pos": "WR"}, {"name": "Amon-Ra St. Brown", "pos": "WR"}, {"name": "George Pickens", "pos": "WR"}, {"name": "Justin Jefferson", "pos": "WR"}, {"name": "Nico Collins", "pos": "WR"}, {"name": "Josh Jacobs", "pos": "RB"}, {"name": "Rashee Rice", "pos": "WR"}], [{"name": "Jameson Williams", "pos": "WR"}, {"name": "Tetairoa McMillan", "pos": "WR"}, {"name": "Malik Nabers", "pos": "WR"}, {"name": "Javonte Williams", "pos": "RB"}, {"name": "Davante Adams", "pos": "WR"}, {"name": "Breece Hall", "pos": "RB"}, {"name": "Zay Flowers", "pos": "WR"}, {"name": "Jeremiyah Love", "pos": "RB"}, {"name": "Chris Olave", "pos": "WR"}, {"name": "Kyren Williams", "pos": "RB"}], [{"name": "Cam Skattebo", "pos": "RB"}, {"name": "Emeka Egbuka", "pos": "WR"}, {"name": "DeVonta Smith", "pos": "WR"}, {"name": "Rome Odunze", "pos": "WR"}, {"name": "D'Andre Swift", "pos": "RB"}, {"name": "Ladd McConkey", "pos": "WR"}, {"name": "Travis Etienne Jr.", "pos": "RB"}, {"name": "Garrett Wilson", "pos": "WR"}, {"name": "Bucky Irving", "pos": "RB"}, {"name": "Quinshon Judkins", "pos": "RB"}], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB"}, {"name": "Saquon Barkley", "pos": "RB"}, {"name": "Christian McCaffrey", "pos": "RB"}, {"name": "Derrick Henry", "pos": "RB"}, {"name": "Ja'Marr Chase", "pos": "WR"}, {"name": "Trey McBride", "pos": "TE"}, {"name": "Jonathan Taylor", "pos": "RB"}, {"name": "Josh Allen", "pos": "QB"}, {"name": "Jahmyr Gibbs", "pos": "RB"}, {"name": "James Cook III", "pos": "RB"}], "protectRow": [{"name": "Drake Maye", "pos": "QB"}, {"name": "Marvin Harrison Jr.", "pos": "WR"}, {"name": "Omarion Hampton", "pos": "RB"}, {"name": "Terry McLaurin", "pos": "WR"}, {"name": "Kenneth Walker", "pos": "RB"}, {"name": "Ashton Jeanty", "pos": "RB"}, {"name": "CeeDee Lamb", "pos": "WR"}, {"name": "Tee Higgins", "pos": "WR"}, {"name": "Drake London", "pos": "WR"}, {"name": "A.J. Brown", "pos": "WR"}], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
+const STATE = {"teams": ["Chili Dogs", "Murphy's Law", "Those Bastards", "Just The Tip", "Easy Money", "Below Me", "Hairy Beavers", "IT Militia", "I Know What I Did", "Old No 7"], "myIndex": 3, "liveRounds": 12, "picksGrid": [[{"name": "Bijan Robinson", "pos": "RB", "nflTeam": "Atlanta Falcons"}, {"name": "Puka Nacua", "pos": "WR", "nflTeam": "Los Angeles Rams"}, {"name": "De'Von Achane", "pos": "RB", "nflTeam": "Miami Dolphins"}, {"name": "Jaxon Smith-Njigba", "pos": "WR", "nflTeam": "Seattle Seahawks"}, {"name": "Amon-Ra St. Brown", "pos": "WR", "nflTeam": "Detroit Lions"}, {"name": "George Pickens", "pos": "WR", "nflTeam": "Dallas Cowboys"}, {"name": "Justin Jefferson", "pos": "WR", "nflTeam": "Minnesota Vikings"}, {"name": "Nico Collins", "pos": "WR", "nflTeam": "Houston Texans"}, {"name": "Josh Jacobs", "pos": "RB", "nflTeam": "Green Bay Packers"}, {"name": "Rashee Rice", "pos": "WR", "nflTeam": "Kansas City Chiefs"}], [{"name": "Jameson Williams", "pos": "WR", "nflTeam": "Detroit Lions"}, {"name": "Tetairoa McMillan", "pos": "WR", "nflTeam": "Carolina Panthers"}, {"name": "Malik Nabers", "pos": "WR", "nflTeam": "New York Giants"}, {"name": "Javonte Williams", "pos": "RB", "nflTeam": "Dallas Cowboys"}, {"name": "Davante Adams", "pos": "WR", "nflTeam": "Los Angeles Rams"}, {"name": "Breece Hall", "pos": "RB", "nflTeam": "New York Jets"}, {"name": "Zay Flowers", "pos": "WR", "nflTeam": "Baltimore Ravens"}, {"name": "Jeremiyah Love", "pos": "RB", "nflTeam": "Arizona Cardinals"}, {"name": "Chris Olave", "pos": "WR", "nflTeam": "New Orleans Saints"}, {"name": "Kyren Williams", "pos": "RB", "nflTeam": "Los Angeles Rams"}], [{"name": "Cam Skattebo", "pos": "RB", "nflTeam": "New York Giants"}, {"name": "Emeka Egbuka", "pos": "WR", "nflTeam": "Tampa Bay Buccaneers"}, {"name": "DeVonta Smith", "pos": "WR", "nflTeam": "Philadelphia Eagles"}, {"name": "Rome Odunze", "pos": "WR", "nflTeam": "Chicago Bears"}, {"name": "D'Andre Swift", "pos": "RB", "nflTeam": "Chicago Bears"}, {"name": "Ladd McConkey", "pos": "WR", "nflTeam": "Los Angeles Chargers"}, {"name": "Travis Etienne Jr.", "pos": "RB", "nflTeam": "New Orleans Saints"}, {"name": "Garrett Wilson", "pos": "WR", "nflTeam": "New York Jets"}, {"name": "Bucky Irving", "pos": "RB", "nflTeam": "Tampa Bay Buccaneers"}, {"name": "Quinshon Judkins", "pos": "RB", "nflTeam": "Cleveland Browns"}], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null]], "keepRow": [{"name": "Chase Brown", "pos": "RB", "nflTeam": "Cincinnati Bengals"}, {"name": "Saquon Barkley", "pos": "RB", "nflTeam": "Philadelphia Eagles"}, {"name": "Christian McCaffrey", "pos": "RB", "nflTeam": "San Francisco 49ers"}, {"name": "Derrick Henry", "pos": "RB", "nflTeam": "Baltimore Ravens"}, {"name": "Ja'Marr Chase", "pos": "WR", "nflTeam": "Cincinnati Bengals"}, {"name": "Trey McBride", "pos": "TE", "nflTeam": "Arizona Cardinals"}, {"name": "Jonathan Taylor", "pos": "RB", "nflTeam": "Indianapolis Colts"}, {"name": "Josh Allen", "pos": "QB", "nflTeam": "Buffalo Bills"}, {"name": "Jahmyr Gibbs", "pos": "RB", "nflTeam": "Detroit Lions"}, {"name": "James Cook III", "pos": "RB", "nflTeam": "Buffalo Bills"}], "protectRow": [{"name": "Drake Maye", "pos": "QB", "nflTeam": "New England Patriots"}, {"name": "Marvin Harrison Jr.", "pos": "WR", "nflTeam": "Arizona Cardinals"}, {"name": "Omarion Hampton", "pos": "RB", "nflTeam": "Los Angeles Chargers"}, {"name": "Terry McLaurin", "pos": "WR", "nflTeam": "Washington Commanders"}, {"name": "Kenneth Walker", "pos": "RB", "nflTeam": "Kansas City Chiefs"}, {"name": "Ashton Jeanty", "pos": "RB", "nflTeam": "Las Vegas Raiders"}, {"name": "CeeDee Lamb", "pos": "WR", "nflTeam": "Dallas Cowboys"}, {"name": "Tee Higgins", "pos": "WR", "nflTeam": "Cincinnati Bengals"}, {"name": "Drake London", "pos": "WR", "nflTeam": "Atlanta Falcons"}, {"name": "A.J. Brown", "pos": "WR", "nflTeam": "New England Patriots"}], "posColors": {"QB": "#c7cdd3", "RB": "#e2564f", "WR": "#a9d3ff", "TE": "#a8f0c0", "K": "#d8c4f5", "DEF": "#ffe14d"}, "leagueName": "Ted Brown Memorial League (TBML)", "draftDate": "Saturday, Aug 29, 2026"};
+
+// 2026 NFL bye weeks per team (per NFL.com's 2026 schedule release) -- kept
+// in sync by hand with the copy in draft-players.html's player-card modal.
+const TEAM_BYE = {
+  "Arizona Cardinals": 14, "Atlanta Falcons": 11, "Baltimore Ravens": 13, "Buffalo Bills": 7,
+  "Carolina Panthers": 5, "Chicago Bears": 10, "Cincinnati Bengals": 6, "Cleveland Browns": 11,
+  "Dallas Cowboys": 14, "Denver Broncos": 10, "Detroit Lions": 6, "Green Bay Packers": 11,
+  "Houston Texans": 8, "Indianapolis Colts": 13, "Jacksonville Jaguars": 7, "Kansas City Chiefs": 5,
+  "Las Vegas Raiders": 13, "Los Angeles Chargers": 7, "Los Angeles Rams": 11, "Miami Dolphins": 6,
+  "Minnesota Vikings": 6, "New England Patriots": 11, "New Orleans Saints": 8, "New York Giants": 8,
+  "New York Jets": 13, "Philadelphia Eagles": 10, "Pittsburgh Steelers": 9, "San Francisco 49ers": 8,
+  "Seattle Seahawks": 11, "Tampa Bay Buccaneers": 10, "Tennessee Titans": 9, "Washington Commanders": 7,
+};
 
 function hexIsSet(pos) { return STATE.posColors[pos]; }
 
@@ -78,7 +93,9 @@ function overallPick(round, teamIndex, n) {
 
 function cellInner(label, entry) {
   const filled = entry && entry.name;
-  return `<div class="pick-num">${label}</div><div class="pick-player${filled ? ' filled' : ' pending'}">${filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}</div>`;
+  const bye = filled && entry.nflTeam ? TEAM_BYE[entry.nflTeam] : null;
+  const byeBadge = bye ? `<div class="pick-bye">Bye ${bye}</div>` : '';
+  return `${byeBadge}<div class="pick-num">${label}</div><div class="pick-player${filled ? ' filled' : ' pending'}">${filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}</div>`;
 }
 
 function applyPosStyle(td, entry) {
@@ -168,6 +185,6 @@ renderHead();
 renderLegend();
 renderBoard();
 </script>
-<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.4</div>
+<div style="text-align:center; font-size:11px; color:#93a4b3; opacity:0.5; padding:22px 0 6px;">TBML Draft Tool &middot; v0.2.1.5</div>
 </body>
 </html>
