@@ -96,6 +96,11 @@
     font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700;
     padding: 3px 9px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim);
   }
+  footer .tag-link {
+    cursor: pointer; text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  footer .tag-link:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -160,7 +165,10 @@
       <span class="tag">Snake Draft</span>
       <span class="tag">Keep &amp; Protect</span>
     </div>
-    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.3.0</div>
+    <div style="margin-top:14px;">
+      <a class="tag tag-link" href="/entry" target="_blank" rel="noopener noreferrer">Pick Entry</a>
+    </div>
+    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.4.0</div>
   </footer>
 </div>
 
