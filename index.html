@@ -58,8 +58,13 @@
        (plus its 24px/side padding) instead of a fixed width, so it never
        crowds the text on narrower tablets -- just shows a smaller sliver. */
     width: clamp(50px, calc((100vw - 700px) / 2), 380px);
-    object-fit: cover; opacity: 0.13; z-index: 0; pointer-events: none;
+    opacity: 0.13; z-index: 0; pointer-events: none;
   }
+  .side-photo img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0; transition: opacity 1.8s ease;
+  }
+  .side-photo img.show { opacity: 1; }
   .side-photo.left {
     left: 0;
     -webkit-mask-image: linear-gradient(to right, black 25%, transparent 90%);
@@ -104,8 +109,16 @@
 </style>
 </head>
 <body>
-<img class="side-photo left" src="/ted-portrait.jpg" alt="" aria-hidden="true">
-<img class="side-photo right" src="/ted-trophy.jpg" alt="" aria-hidden="true">
+<div class="side-photo left" aria-hidden="true">
+  <img src="/ted-portrait.jpg" alt="" class="show">
+</div>
+<div class="side-photo right" aria-hidden="true" id="trophy-cycle">
+  <img src="/ted-trophy.jpg" alt="" class="show">
+  <img src="/ted-trophy-plaque.jpg" alt="">
+  <img src="/ted-trophy-shelf.jpg" alt="">
+  <img src="/ted-trophy-hand.jpg" alt="">
+  <img src="/ted-trophy-holder.jpg" alt="">
+</div>
 <div class="wrap">
   <div class="kicker">Ted Brown Memorial League</div>
   <h1>🏈 2026 Draft</h1>
@@ -200,6 +213,17 @@ function tick() {
 }
 tick();
 const timer = setInterval(tick, 1000);
+
+// Crossfade through the trophy photos on the right-hand side.
+const trophyPhotos = document.querySelectorAll('#trophy-cycle img');
+if (trophyPhotos.length > 1) {
+  let trophyIndex = 0;
+  setInterval(() => {
+    trophyPhotos[trophyIndex].classList.remove('show');
+    trophyIndex = (trophyIndex + 1) % trophyPhotos.length;
+    trophyPhotos[trophyIndex].classList.add('show');
+  }, 7000);
+}
 </script>
 </body>
 </html>
