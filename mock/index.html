@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TBML Mock Draft Sandbox</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #0f1720; --panel: #16212c; --panel-2: #1c2a37; --border: #2a3a48;
+    --text: #e8edf2; --text-dim: #93a4b3; --accent: #f5a623; --accent-bg: rgba(245,166,35,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(245,166,35,0.10), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(245,166,35,0.06), transparent 45%),
+      var(--bg);
+    color: var(--text); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding: 24px;
+  }
+  .wrap { max-width: 640px; width: 100%; text-align: center; }
+  .banner {
+    background: var(--accent); color: #1a1200; text-align: center; font-weight: 800;
+    font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+    padding: 8px 12px; border-radius: 10px; margin-bottom: 22px;
+  }
+  .kicker {
+    font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  h1 { font-size: 2.1rem; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-dim); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+  .sub strong { color: var(--text); font-weight: 600; }
+
+  .links { display: flex; flex-direction: column; gap: 14px; }
+  a.card {
+    display: flex; align-items: center; gap: 14px; text-align: left;
+    padding: 18px 20px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; text-decoration: none; color: var(--text);
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  a.card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--panel-2); }
+  a.card .icon {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--accent-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  a.card .title { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
+  a.card .desc { font-size: 12.5px; color: var(--text-dim); }
+  a.card .arrow { margin-left: auto; color: var(--text-dim); font-size: 18px; }
+
+  footer { margin-top: 30px; font-size: 11.5px; color: var(--text-dim); line-height: 1.7; }
+  footer .tags { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  footer .tag {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700;
+    padding: 3px 9px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  footer .tag-link {
+    cursor: pointer; text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  footer .tag-link:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner">&#129514; Mock Draft Sandbox &mdash; not the real draft, none of this counts</div>
+  <div class="kicker">Ted Brown Memorial League</div>
+  <h1>Mock Draft Sandbox</h1>
+  <div class="sub">
+    A completely separate playground copy of the draft tool &mdash; its own picks, its own state,
+    its own AI roasts. <strong>Nothing here touches the real draft.</strong> Reset it back to a
+    full sample draft any time from Mock Pick Entry.
+  </div>
+
+  <div class="links">
+    <a class="card" href="/mock/board/draft-board.html">
+      <div class="icon">📋</div>
+      <div>
+        <div class="title">Mock Draft Board</div>
+        <div class="desc">Same snake-draft grid, running on fake picks</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </a>
+    <a class="card" href="/mock/board/draft-players.html">
+      <div class="icon">🔎</div>
+      <div>
+        <div class="title">Mock Available Players</div>
+        <div class="desc">Player pool availability, reflecting the mock picks only</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </a>
+    <a class="card" href="/mock/board/keep-protect.html">
+      <div class="icon">🛡️</div>
+      <div>
+        <div class="title">Mock Keep/Protect Tracker</div>
+        <div class="desc">Same Keep &amp; Protect logic, resolved against fake picks</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </a>
+    <a class="card" href="/mock/board/grades/grades.html">
+      <div class="icon">🎓</div>
+      <div>
+        <div class="title">Mock Draft Grades</div>
+        <div class="desc">Try out the built-in and AI roasts without spending a real generation</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </a>
+  </div>
+
+  <footer>
+    Same PIN as the real Pick Entry page &mdash; picks, undos, and AI roasts here are fully live,
+    just isolated to this sandbox's own copy of the data.
+    <div class="tags">
+      <span class="tag">Practice Only</span>
+      <span class="tag">Isolated Data</span>
+    </div>
+    <div style="margin-top:14px;">
+      <a class="tag tag-link" href="/mock/entry" target="_blank" rel="noopener noreferrer">Mock Pick Entry</a>
+      <a class="tag tag-link" href="/" style="margin-left:6px;">Back to real draft site</a>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
