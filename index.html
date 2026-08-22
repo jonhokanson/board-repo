@@ -13,6 +13,9 @@
     --bg: #0f1720; --panel: #16212c; --panel-2: #1c2a37; --border: #2a3a48;
     --text: #e8edf2; --text-dim: #93a4b3; --accent: #3ba7ff; --accent-bg: rgba(59,167,255,0.12);
     --keep: #33c17a; --protect: #f5a623;
+    /* Translucent versions of --panel/--panel-2 for anything that now sits on top of the
+       side photos, so the photos still show through instead of being fully hidden. */
+    --panel-glass: rgba(22, 33, 44, 0.72); --panel-2-glass: rgba(28, 42, 55, 0.78);
   }
   * { box-sizing: border-box; }
   body {
@@ -37,7 +40,8 @@
     display: flex; justify-content: center; gap: 10px; margin-bottom: 32px;
   }
   .countdown .cell {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    background: var(--panel-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border); border-radius: 10px;
     padding: 12px 14px; min-width: 64px;
   }
   .countdown .num { font-size: 1.6rem; font-weight: 800; color: var(--accent); line-height: 1; }
@@ -45,7 +49,8 @@
 
   .qr-card {
     display: flex; align-items: center; gap: 16px; justify-content: center;
-    margin-top: 20px; margin-bottom: 28px; padding: 14px 18px; background: var(--panel);
+    margin-top: 20px; margin-bottom: 28px; padding: 14px 18px; background: var(--panel-glass);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border); border-radius: 12px;
   }
   .qr-card .qr-box { background: #fff; padding: 8px; border-radius: 8px; line-height: 0; flex-shrink: 0; }
@@ -54,11 +59,13 @@
 
   .side-photo {
     position: fixed; top: 0; bottom: 0;
-    /* Scales with whatever room is left beside the 640px content column
-       (plus its 24px/side padding) instead of a fixed width, so it never
-       crowds the text on narrower tablets -- just shows a smaller sliver. */
-    width: clamp(50px, calc((100vw - 700px) / 2), 380px);
-    opacity: 0.13; z-index: 0; pointer-events: none;
+    /* Deliberately wide enough to reach under the content column, not just
+       fill the margins beside it -- the cards/countdown/QR card above use
+       translucent "glass" backgrounds (--panel-glass) so the photos show
+       through them rather than being fully hidden. Still scales down on
+       narrower screens so it never overwhelms the text. */
+    width: clamp(160px, 40vw, 640px);
+    opacity: 0.16; z-index: 0; pointer-events: none;
   }
   .side-photo img {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -82,11 +89,12 @@
   .links { display: flex; flex-direction: column; gap: 14px; }
   a.card {
     display: flex; align-items: center; gap: 14px; text-align: left;
-    padding: 18px 20px; background: var(--panel); border: 1px solid var(--border);
+    padding: 18px 20px; background: var(--panel-glass); border: 1px solid var(--border);
     border-radius: 12px; text-decoration: none; color: var(--text);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
-  a.card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--panel-2); }
+  a.card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--panel-2-glass); }
   a.card .icon {
     width: 42px; height: 42px; border-radius: 10px; background: var(--accent-bg);
     display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
