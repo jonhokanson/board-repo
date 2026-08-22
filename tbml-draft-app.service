@@ -11,6 +11,10 @@ Environment=BOARD_OUT=/var/www/html/board/draft-board.html
 Environment=LIST_OUT=/var/www/html/board/draft-players.html
 Environment=KP_OUT=/var/www/html/board/keep-protect.html
 Environment=GRADES_OUT_DIR=/var/www/html/board/grades
+Environment=MOCK_BOARD_OUT=/var/www/html/mock/board/draft-board.html
+Environment=MOCK_LIST_OUT=/var/www/html/mock/board/draft-players.html
+Environment=MOCK_KP_OUT=/var/www/html/mock/board/keep-protect.html
+Environment=MOCK_GRADES_OUT_DIR=/var/www/html/mock/board/grades
 Environment=GIT_REPO_DIR=/var/www/html
 Environment=GIT_REMOTE=github
 Environment=GIT_BRANCH=main

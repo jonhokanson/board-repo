@@ -14,5 +14,12 @@ draft-board.html
 draft-players.html
 keep-protect.html
 
+# Mock draft sandbox -- same story as state.json above, EXCEPT
+# mock_state.seed.json, which IS tracked on purpose: it's the reusable
+# starting point /mock/reset restores from, not live runtime data.
+mock_state.json
+mock_state.json.tmp
+mock_state.json.lock
+
 __pycache__/
 *.pyc

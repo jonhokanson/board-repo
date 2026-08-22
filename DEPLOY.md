@@ -69,6 +69,48 @@ sudo chmod 600 /opt/tbml-draft-app/anthropic_key.txt
 No systemd/env var changes or restart needed -- `draft_app.py` reads this file fresh every time
 someone clicks "Generate" on the `/entry` page.
 
+## 3b. Mock draft sandbox (added 2026-08-22, optional)
+
+A second, fully independent copy of the live app -- its own state file, its own board pages, its
+own AI roasts -- for trying things out (a new feature, a scoring question, "what does this look
+like mid-draft") without any risk of touching the real draft. Same PIN, same `/entry`-style pick
+form, reachable at `/mock/entry`; its landing page (`/mock`) links to the mock board/players/
+keep-protect/grades pages. It's on the `v2-live-app` branch alongside everything else, so
+`deploy.sh`/`full-deploy.sh` picks it up automatically -- these steps are just the one-time setup.
+
+**Seed the mock state** -- same one-time-copy idea as `state.template.json` -> `state.json`, except
+this seed is a full, already-completed 12-round demo draft (so the mock board looks populated
+immediately) and can be replayed any time from a "Reset mock draft" button on `/mock/entry`:
+```
+sudo cp /opt/tbml-draft-app/mock_state.seed.json /opt/tbml-draft-app/mock_state.json
+sudo chown www-data:www-data /opt/tbml-draft-app/mock_state.json
+```
+(If you skip this, the first visit to `/mock/entry` or click of "Reset mock draft" does it for you.)
+
+**Output directory** -- the mock board pages are served the same static way as the real ones, from
+a new `/var/www/html/mock/board` directory that nothing else creates. The app will create it on
+first write if it's missing, but it's cleaner to make it explicit up front:
+```
+sudo mkdir -p /var/www/html/mock/board
+sudo chown -R www-data:www-data /var/www/html/mock
+```
+
+**Systemd env vars** -- `MOCK_BOARD_OUT`/`MOCK_LIST_OUT`/`MOCK_KP_OUT`/`MOCK_GRADES_OUT_DIR` are new
+`Environment=` lines added to `tbml-draft-app.service` (see step 7's file) pointing at
+`/var/www/html/mock/board/*`. `deploy.sh`/`full-deploy.sh` only pull *code*, never the systemd unit
+file itself -- so after this update lands, install the refreshed unit file once by hand and restart
+(this is the same one-time step needed any time a new `Environment=` line is added):
+```
+sudo cp /opt/tbml-draft-app/tbml-draft-app.service /etc/systemd/system/tbml-draft-app.service
+sudo systemctl daemon-reload
+sudo systemctl restart tbml-draft-app
+```
+
+**Nothing else needed** -- no nginx changes (the mock pages are under the existing static root),
+no separate git remote/token (mock picks are never pushed to GitHub -- see the code comment on
+`push_backup()`), and `mock_state.json`/`mock_state.json.lock` are already git-ignored so
+`deploy.sh` will never touch your in-progress mock picks.
+
 ## 4. Ownership
 
 The service runs as `www-data` (same user as `board-sync.service` used to), and needs to write

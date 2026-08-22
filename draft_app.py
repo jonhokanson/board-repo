@@ -50,6 +50,23 @@ LIST_OUT = os.environ.get("LIST_OUT", os.path.join(BASE_DIR, "draft-players.html
 KP_OUT = os.environ.get("KP_OUT", os.path.join(BASE_DIR, "keep-protect.html"))
 GRADES_OUT_DIR = os.environ.get("GRADES_OUT_DIR", os.path.join(BASE_DIR, "grades"))
 
+# --- Mock draft sandbox (added 2026-08-22) --------------------------------
+# A second, fully independent copy of everything above -- its own state
+# file, lock, and output paths -- so Jon can submit picks, undo, and
+# generate/clear AI roasts against fake data without any risk of touching
+# the real draft. Never backed up to git (see mock_reset()/mock routes
+# below) since it's throwaway play data, not something worth a history for.
+# On Web01 these point at /var/www/html/mock/board/*.html, same static-file
+# serving as the real board -- no nginx changes needed, just new systemd
+# Environment= lines (see DEPLOY.md).
+MOCK_STATE_PATH = os.environ.get("MOCK_STATE_PATH", os.path.join(BASE_DIR, "mock_state.json"))
+MOCK_SEED_PATH = os.environ.get("MOCK_SEED_PATH", os.path.join(BASE_DIR, "mock_state.seed.json"))
+MOCK_LOCK_PATH = MOCK_STATE_PATH + ".lock"
+MOCK_BOARD_OUT = os.environ.get("MOCK_BOARD_OUT", os.path.join(BASE_DIR, "mock-draft-board.html"))
+MOCK_LIST_OUT = os.environ.get("MOCK_LIST_OUT", os.path.join(BASE_DIR, "mock-draft-players.html"))
+MOCK_KP_OUT = os.environ.get("MOCK_KP_OUT", os.path.join(BASE_DIR, "mock-keep-protect.html"))
+MOCK_GRADES_OUT_DIR = os.environ.get("MOCK_GRADES_OUT_DIR", os.path.join(BASE_DIR, "mock-grades"))
+
 # Local git working copy to push backups from -- separate from the paths
 # above so a slow/failed git push can never block or corrupt what's served.
 GIT_REPO_DIR = os.environ.get("GIT_REPO_DIR")  # e.g. /var/www/html on Web01
@@ -88,27 +105,33 @@ def load_pool():
     return json.load(open(POOL_PATH))
 
 
-def load_state():
-    return json.load(open(STATE_PATH))
+def load_state(path=None):
+    return json.load(open(path or STATE_PATH))
 
 
-def save_state(state):
+def save_state(state, path=None):
     """Read-modify-write callers should hold the lock for the whole critical
     section; this just does the write+atomic-rename part."""
-    tmp_path = STATE_PATH + ".tmp"
+    path = path or STATE_PATH
+    tmp_path = path + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(state, f, indent=2)
-    os.replace(tmp_path, STATE_PATH)
+    os.replace(tmp_path, path)
 
 
 class StateLock:
-    """File lock around the read-modify-write cycle for state.json, so two
+    """File lock around the read-modify-write cycle for a state file, so two
     near-simultaneous submits (double click, two tabs) can't interleave and
     corrupt it. Not needed for correctness if the app only ever runs with a
-    single worker/thread, but cheap insurance if that ever changes."""
+    single worker/thread, but cheap insurance if that ever changes. Defaults
+    to the real draft's lock; the mock routes pass MOCK_LOCK_PATH so the two
+    state files can never block or interleave with each other."""
+
+    def __init__(self, lock_path=None):
+        self.lock_path = lock_path or LOCK_PATH
 
     def __enter__(self):
-        self.fh = open(LOCK_PATH, "w")
+        self.fh = open(self.lock_path, "w")
         fcntl.flock(self.fh, fcntl.LOCK_EX)
         return self
 
@@ -117,22 +140,63 @@ class StateLock:
         self.fh.close()
 
 
-def regenerate_pages(state, pool):
+def regenerate_pages(state, pool, board_out=None, list_out=None, kp_out=None, grades_dir=None):
+    board_out = board_out or BOARD_OUT
+    list_out = list_out or LIST_OUT
+    kp_out = kp_out or KP_OUT
+    grades_dir = grades_dir or GRADES_OUT_DIR
+
     derived = g.build_derived_state(state, pool)
     board_html = g.render_draft_board(derived, state)
     list_html = g.render_available_players(pool, derived)
     kp_data = g.build_keep_protect_data(state, pool)
     kp_html = g.render_keep_protect(kp_data, state)
     grades = g.compute_team_grades(state, pool)
-    open(BOARD_OUT, "w").write(board_html)
-    open(LIST_OUT, "w").write(list_html)
-    open(KP_OUT, "w").write(kp_html)
+    open(board_out, "w").write(board_html)
+    open(list_out, "w").write(list_html)
+    open(kp_out, "w").write(kp_html)
 
-    os.makedirs(GRADES_OUT_DIR, exist_ok=True)
+    os.makedirs(grades_dir, exist_ok=True)
     for team in state["teams"]:
-        page_path = os.path.join(GRADES_OUT_DIR, f"grade-{g.team_slug(team)}.html")
+        page_path = os.path.join(grades_dir, f"grade-{g.team_slug(team)}.html")
         open(page_path, "w").write(g.render_grade_page(grades[team], state))
-    open(os.path.join(GRADES_OUT_DIR, "grades.html"), "w").write(g.render_grades_hub(grades, state))
+    open(os.path.join(grades_dir, "grades.html"), "w").write(g.render_grades_hub(grades, state))
+
+
+MOCK_BANNER_HTML = (
+    '<div style="background:#f5a623;color:#1a1200;text-align:center;'
+    'font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;'
+    'padding:6px 10px;">&#129514; Mock Draft &mdash; not the real draft, none of this counts</div>'
+)
+
+
+def _inject_mock_banner(path):
+    html_str = open(path).read().replace("<body>", "<body>" + MOCK_BANNER_HTML, 1)
+    open(path, "w").write(html_str)
+
+
+def regenerate_mock_pages(state, pool):
+    """Same rendering as regenerate_pages(), written to the separate mock/
+    output paths, with a bright banner spliced into every page so there's
+    never any chance of mistaking this for the real draft."""
+    # Unlike the real board/list/kp paths (whose parent dir -- /var/www/html/board --
+    # already exists from the original static-site setup), the mock output paths
+    # point at a brand-new /var/www/html/mock/board that nothing else creates.
+    # regenerate_pages() itself only os.makedirs()'s the grades subdirectory, so
+    # create the board/list/kp parent dirs here defensively rather than relying
+    # on a one-time manual mkdir on Web01.
+    for out_path in (MOCK_BOARD_OUT, MOCK_LIST_OUT, MOCK_KP_OUT):
+        parent = os.path.dirname(out_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+    regenerate_pages(
+        state, pool,
+        board_out=MOCK_BOARD_OUT, list_out=MOCK_LIST_OUT, kp_out=MOCK_KP_OUT, grades_dir=MOCK_GRADES_OUT_DIR,
+    )
+    for path in (MOCK_BOARD_OUT, MOCK_LIST_OUT, MOCK_KP_OUT):
+        _inject_mock_banner(path)
+    for fname in os.listdir(MOCK_GRADES_OUT_DIR):
+        _inject_mock_banner(os.path.join(MOCK_GRADES_OUT_DIR, fname))
 
 
 def push_backup(message, state):
@@ -700,6 +764,414 @@ def entry_with_msg():
     # flash mechanism: re-render entry() then splice the message banner in.
     # (named page_html, not html, so it doesn't shadow the `html` module
     # imported at the top of this file for html.escape())
+    page_html = resp.get_data(as_text=True)
+    banner = f'<div class="msg {kind}">{msg}</div>'
+    page_html = page_html.replace('<div class="wrap">', '<div class="wrap">' + banner, 1)
+    resp.set_data(page_html)
+    return resp
+
+
+# === Mock draft sandbox (added 2026-08-22) ================================
+# Deliberate near-duplicates of the real /entry routes above, not a shared
+# refactor -- the real routes are the ones that must never break on draft
+# night, so they're left completely untouched here. Everything below reads
+# and writes MOCK_STATE_PATH instead of STATE_PATH, shares the SAME PIN/
+# session (require_auth()) as the real entry page since anyone who knows the
+# real PIN already has no meaningful new access by also touching fake data,
+# and skips push_backup() entirely -- there's nothing here worth a git
+# history for.
+
+@app.route("/mock/entry", methods=["GET"])
+def mock_entry():
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    state = load_state(MOCK_STATE_PATH)
+    pool = load_pool()
+
+    slot = g.next_pick_slot(state)
+    if slot:
+        on_clock_html = f"""
+      <div class="on-clock">
+        <div>
+          <div class="round">Round {slot['round']} &middot; Pick {len(state['picks']) + 1}</div>
+          <div class="who">{slot['team']} is on the clock</div>
+        </div>
+        <span class="toggle-link" onclick="document.getElementById('override').classList.toggle('open')">Wrong? Override &rarr;</span>
+      </div>
+      <div id="override" class="override-row">
+        <div>
+          <label for="ovTeam">Team</label>
+          <select id="ovTeam" name="override_team">
+            <option value="">(use on-the-clock team)</option>
+            {''.join(f'<option value="{t}">{t}</option>' for t in state['teams'])}
+          </select>
+        </div>
+        <div>
+          <label for="ovRound">Round</label>
+          <select id="ovRound" name="override_round">
+            <option value="">(use next round)</option>
+            {''.join(f'<option value="{r}">{r}</option>' for r in range(1, state['liveRounds'] + 1))}
+          </select>
+        </div>
+      </div>
+      """
+    else:
+        on_clock_html = '<div class="on-clock"><div class="who">All 12 live rounds are full.</div></div>'
+
+    available_players = sorted(
+        [p for p in pool if p["status"] == "available"],
+        key=lambda p: (p["pos"], p.get("rank") or 999),
+    )
+    player_payload = json.dumps(
+        [{"name": p["name"], "pos": p["pos"], "team": p.get("nflTeam", "")} for p in available_players]
+    )
+
+    recent = list(reversed(state["picks"][-8:]))
+    recent_html = (
+        "".join(
+            f'<div class="row"><span class="name">{pk["name"]}</span><span>R{pk["round"]} &middot; {pk["team"]}</span></div>'
+            for pk in recent
+        )
+        if recent
+        else '<div class="row"><span>No picks recorded yet.</span></div>'
+    )
+
+    has_ai_key = read_anthropic_key() is not None
+    grades = g.compute_team_grades(state, pool)
+    final_teams = [
+        t for t in state["teams"]
+        if grades[t]["roundsPicked"] > 0 and grades[t]["roundsPicked"] >= grades[t]["liveRounds"]
+    ]
+    roasted_teams = [t for t in final_teams if t in state.get("roasts", {})]
+
+    if not has_ai_key:
+        roast_card = """
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);">No Anthropic API key configured yet on this server -- grade pages are using the free built-in roast. See anthropic_key.txt.</div>
+  </div>
+  """
+    elif not final_teams:
+        roast_card = """
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);">No teams have finished their draft yet -- nothing to generate.</div>
+  </div>
+  """
+    else:
+        n_final = len(final_teams)
+        status_line = (
+            f"{len(roasted_teams)} of {n_final} finished team{'s' if n_final != 1 else ''} "
+            f"{'have' if n_final != 1 else 'has'} an AI roast; the rest use the built-in one."
+        )
+        roast_card = f"""
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px;">{status_line}</div>
+    <form method="post" action="/mock/entry/generate-grades">
+      <button class="primary" type="submit">Generate missing AI roasts</button>
+    </form>
+    <div style="margin-top:10px;">
+      <span class="toggle-link" onclick="document.getElementById('regen').classList.toggle('open')">Regenerate one team &rarr;</span>
+    </div>
+    <div id="regen" class="override-row">
+      <form method="post" action="/mock/entry/generate-grades" style="display:flex;gap:10px;width:100%;align-items:flex-end;">
+        <div style="flex:1;">
+          <label for="regenTeam">Team</label>
+          <select id="regenTeam" name="team">
+            {''.join(f'<option value="{t}">{t}</option>' for t in final_teams)}
+          </select>
+        </div>
+        <button class="ghost" type="submit" formaction="/mock/entry/generate-grades">Regenerate</button>
+        <button class="danger" type="submit" formaction="/mock/entry/clear-grade" onclick="return confirm('Clear the AI roast for this team? It will fall back to the built-in roast.');">Clear</button>
+      </form>
+    </div>
+  </div>
+  """
+
+    body = MOCK_BANNER_HTML + f"""
+  <div class="card">
+    <form method="post" action="/mock/entry/pick" id="pickForm">
+      {on_clock_html}
+      <label for="playerSearch">Player</label>
+      <input type="text" id="playerSearch" autocomplete="off" placeholder="Start typing a name...">
+      <div id="suggestions" class="suggestions"></div>
+      <input type="hidden" id="playerName" name="player_name">
+      <button class="primary" type="submit" id="submitBtn" disabled>Record pick</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <form method="post" action="/mock/entry/undo" onsubmit="return confirm('Undo the most recent mock pick?');">
+      <button class="danger" type="submit">Undo last pick</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Recent picks</div>
+    <div class="recent">{recent_html}</div>
+  </div>
+  {roast_card}
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Reset</div>
+    <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px;">Restores the mock draft to its seed state -- a full, already-completed 12-round demo draft -- discarding any picks/undos/roasts you've made here.</div>
+    <form method="post" action="/mock/reset" onsubmit="return confirm('Reset the mock draft back to the seed state? This discards everything you\\'ve done here.');">
+      <button class="danger" type="submit">Reset mock draft</button>
+    </form>
+  </div>
+
+  <div class="sub">
+    <a class="home-link" href="/mock/board/draft-board.html" style="text-decoration:underline;">View mock board</a>
+    &middot;
+    <a class="home-link" href="/entry/logout" style="text-decoration:underline;">Log out</a>
+  </div>
+
+  <script>
+    const PLAYERS = {player_payload};
+    const searchEl = document.getElementById('playerSearch');
+    const suggEl = document.getElementById('suggestions');
+    const hiddenEl = document.getElementById('playerName');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function renderSuggestions(matches) {{
+      if (!matches.length) {{ suggEl.classList.remove('open'); suggEl.innerHTML = ''; return; }}
+      suggEl.innerHTML = matches.slice(0, 12).map(p =>
+        `<div class="suggestion" data-name="${{p.name}}">${{p.name}}<span class="pos">${{p.pos}}${{p.team ? ' &middot; ' + p.team : ''}}</span></div>`
+      ).join('');
+      suggEl.classList.add('open');
+    }}
+
+    searchEl.addEventListener('input', () => {{
+      hiddenEl.value = '';
+      submitBtn.disabled = true;
+      const q = searchEl.value.trim().toLowerCase();
+      if (!q) {{ renderSuggestions([]); return; }}
+      const matches = PLAYERS.filter(p => p.name.toLowerCase().includes(q));
+      renderSuggestions(matches);
+    }});
+
+    suggEl.addEventListener('click', (e) => {{
+      const row = e.target.closest('.suggestion');
+      if (!row) return;
+      searchEl.value = row.dataset.name;
+      hiddenEl.value = row.dataset.name;
+      submitBtn.disabled = false;
+      renderSuggestions([]);
+    }});
+
+    document.addEventListener('click', (e) => {{
+      if (!e.target.closest('#suggestions') && e.target !== searchEl) renderSuggestions([]);
+    }});
+  </script>
+  """
+    return page("Mock Draft Entry", body)
+
+
+@app.route("/mock/entry/pick", methods=["POST"])
+def mock_submit_pick():
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    player_name = request.form.get("player_name", "").strip()
+    override_team = request.form.get("override_team", "").strip()
+    override_round = request.form.get("override_round", "").strip()
+    player_name_safe = html.escape(player_name)
+    override_team_safe = html.escape(override_team)
+
+    if not player_name:
+        return redirect(url_for("mock_entry_with_msg", msg="Pick a player from the suggestions list first.", kind="err"))
+
+    with StateLock(MOCK_LOCK_PATH):
+        state = load_state(MOCK_STATE_PATH)
+        pool = load_pool()
+        pool_by_name = {p["name"]: p for p in pool}
+
+        player = pool_by_name.get(player_name)
+        if not player:
+            return redirect(url_for("mock_entry_with_msg", msg=f'"{player_name_safe}" not found in the player pool.', kind="err"))
+
+        derived = g.build_derived_state(state, pool)
+        status = pool_by_name[player_name].get("status")
+        if status != "available":
+            return redirect(
+                url_for("mock_entry_with_msg", msg=f"{player_name} is already {status} &mdash; not available.", kind="err")
+            )
+
+        if override_team or override_round:
+            if not (override_team and override_round):
+                return redirect(url_for("mock_entry_with_msg", msg="Set both team and round to override, or leave both blank.", kind="err"))
+            if override_team not in state["teams"]:
+                return redirect(url_for("mock_entry_with_msg", msg=f"Unknown team: {override_team_safe}", kind="err"))
+            try:
+                round_ = int(override_round)
+            except ValueError:
+                return redirect(url_for("mock_entry_with_msg", msg=f"Invalid round: {html.escape(override_round)}", kind="err"))
+            if not (1 <= round_ <= state["liveRounds"]):
+                return redirect(url_for("mock_entry_with_msg", msg=f"Round must be between 1 and {state['liveRounds']}.", kind="err"))
+            team = override_team
+            if any(pk["team"] == team and pk["round"] == round_ for pk in state["picks"]):
+                return redirect(url_for("mock_entry_with_msg", msg=f"{team} already has a Round {round_} pick recorded.", kind="err"))
+        else:
+            slot = g.next_pick_slot(state)
+            if not slot:
+                return redirect(url_for("mock_entry_with_msg", msg="All 12 live rounds are already full.", kind="err"))
+            round_, team = slot["round"], slot["team"]
+
+        state["picks"].append({"round": round_, "team": team, "name": player_name, "pos": player["pos"]})
+        state["protectResolution"] = g.compute_protect_resolution(state, pool)
+        save_state(state, MOCK_STATE_PATH)
+        regenerate_mock_pages(state, pool)
+        broadcast_update()
+
+    return redirect(
+        url_for("mock_entry_with_msg", msg=f"Recorded: {player_name} &rarr; {team} (Round {round_}).", kind="ok")
+    )
+
+
+@app.route("/mock/entry/undo", methods=["POST"])
+def mock_undo_pick():
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    with StateLock(MOCK_LOCK_PATH):
+        state = load_state(MOCK_STATE_PATH)
+        pool = load_pool()
+        if not state["picks"]:
+            return redirect(url_for("mock_entry_with_msg", msg="No picks to undo.", kind="err"))
+        removed = state["picks"].pop()
+        state["protectResolution"] = g.compute_protect_resolution(state, pool)
+        save_state(state, MOCK_STATE_PATH)
+        regenerate_mock_pages(state, pool)
+        broadcast_update()
+
+    return redirect(
+        url_for("mock_entry_with_msg", msg=f"Undid: {removed['name']} &rarr; {removed['team']} (Round {removed['round']}).", kind="ok")
+    )
+
+
+@app.route("/mock/entry/generate-grades", methods=["POST"])
+def mock_generate_grades():
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    api_key = read_anthropic_key()
+    if not api_key:
+        return redirect(url_for(
+            "mock_entry_with_msg",
+            msg="No Anthropic API key configured on this server -- see anthropic_key.txt. Grade pages are still using the built-in roast.",
+            kind="err",
+        ))
+
+    only_team = request.form.get("team", "").strip() or None
+
+    with StateLock(MOCK_LOCK_PATH):
+        state = load_state(MOCK_STATE_PATH)
+        pool = load_pool()
+        grades = g.compute_team_grades(state, pool)
+        state.setdefault("roasts", {})
+
+        def is_final(team):
+            gd = grades[team]
+            return gd["roundsPicked"] > 0 and gd["roundsPicked"] >= gd["liveRounds"]
+
+        if only_team:
+            if only_team not in state["teams"]:
+                return redirect(url_for("mock_entry_with_msg", msg=f"Unknown team: {html.escape(only_team)}", kind="err"))
+            if not is_final(only_team):
+                return redirect(url_for("mock_entry_with_msg", msg=f"{html.escape(only_team)} hasn't finished drafting yet.", kind="err"))
+            targets = [only_team]
+        else:
+            targets = [t for t in state["teams"] if is_final(t) and t not in state["roasts"]]
+
+        if not targets:
+            msg = "Nothing to generate -- every finished team already has an AI roast." if not only_team else "Nothing to generate."
+            return redirect(url_for("mock_entry_with_msg", msg=msg, kind="ok"))
+
+        generated, failed = [], []
+        for team in targets:
+            roast = g.generate_ai_roast(grades[team], api_key)
+            if roast:
+                state["roasts"][team] = roast
+                generated.append(team)
+            else:
+                failed.append(team)
+
+        save_state(state, MOCK_STATE_PATH)
+        regenerate_mock_pages(state, pool)
+        broadcast_update()
+
+    if generated and not failed:
+        msg = f"Generated AI roast{'s' if len(generated) != 1 else ''} for: {html.escape(', '.join(generated))}."
+        kind = "ok"
+    elif generated and failed:
+        msg = f"Generated for {html.escape(', '.join(generated))}. Failed for {html.escape(', '.join(failed))} (built-in roast still showing for them)."
+        kind = "err"
+    else:
+        msg = f"AI generation failed for {html.escape(', '.join(failed))} -- check the API key and Web01's internet access. Built-in roast is still showing."
+        kind = "err"
+
+    return redirect(url_for("mock_entry_with_msg", msg=msg, kind=kind))
+
+
+@app.route("/mock/entry/clear-grade", methods=["POST"])
+def mock_clear_grade():
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    team = request.form.get("team", "").strip()
+    if not team:
+        return redirect(url_for("mock_entry_with_msg", msg="Pick a team to clear.", kind="err"))
+
+    with StateLock(MOCK_LOCK_PATH):
+        state = load_state(MOCK_STATE_PATH)
+        pool = load_pool()
+
+        if team not in state["teams"]:
+            return redirect(url_for("mock_entry_with_msg", msg=f"Unknown team: {html.escape(team)}", kind="err"))
+        if team not in state.get("roasts", {}):
+            return redirect(url_for("mock_entry_with_msg", msg=f"{html.escape(team)} doesn't have an AI roast to clear.", kind="ok"))
+
+        del state["roasts"][team]
+        save_state(state, MOCK_STATE_PATH)
+        regenerate_mock_pages(state, pool)
+        broadcast_update()
+
+    return redirect(url_for(
+        "mock_entry_with_msg",
+        msg=f"Cleared the AI roast for {html.escape(team)} -- back to the built-in one.",
+        kind="ok",
+    ))
+
+
+@app.route("/mock/reset", methods=["POST"])
+def mock_reset():
+    """Copies mock_state.seed.json back over the live mock_state.json --
+    the mock equivalent of state.template.json, except resettable any time
+    since there's no real draft-day stakes riding on it."""
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    if not os.path.exists(MOCK_SEED_PATH):
+        return redirect(url_for("mock_entry_with_msg", msg=f"No seed file found at {MOCK_SEED_PATH}.", kind="err"))
+
+    with StateLock(MOCK_LOCK_PATH):
+        seed = json.load(open(MOCK_SEED_PATH))
+        save_state(seed, MOCK_STATE_PATH)
+        pool = load_pool()
+        regenerate_mock_pages(seed, pool)
+        broadcast_update()
+
+    return redirect(url_for("mock_entry_with_msg", msg="Mock draft reset to the seed state (a full 12-round demo draft).", kind="ok"))
+
+
+@app.route("/mock/entry/msg")
+def mock_entry_with_msg():
+    if not require_auth():
+        return redirect(url_for("login"))
+    msg = request.args.get("msg", "")
+    kind = request.args.get("kind", "ok")
+    resp = make_response(mock_entry())
     page_html = resp.get_data(as_text=True)
     banner = f'<div class="msg {kind}">{msg}</div>'
     page_html = page_html.replace('<div class="wrap">', '<div class="wrap">' + banner, 1)
