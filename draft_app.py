@@ -199,6 +199,27 @@ def regenerate_mock_pages(state, pool):
         _inject_mock_banner(os.path.join(MOCK_GRADES_OUT_DIR, fname))
 
 
+def ensure_mock_state():
+    """Bootstraps mock_state.json from the seed file the first time ANY mock
+    route is hit, so a fresh deploy that skipped the manual one-time
+    `cp mock_state.seed.json mock_state.json` step (or one where that file
+    got cleaned up somehow) self-heals instead of every mock route 500ing on
+    a missing file forever. Idempotent and cheap (an os.path.exists check)
+    -- called at the top of every mock route below, same spirit as the
+    template-roast fallback: the feature should never be stuck broken just
+    because a one-time setup step was missed."""
+    if os.path.exists(MOCK_STATE_PATH):
+        return
+    if not os.path.exists(MOCK_SEED_PATH):
+        return  # nothing to bootstrap from -- the route's own load_state() call will raise a clear error
+    with StateLock(MOCK_LOCK_PATH):
+        if os.path.exists(MOCK_STATE_PATH):  # re-check inside the lock -- another request may have won the race
+            return
+        seed = json.load(open(MOCK_SEED_PATH))
+        save_state(seed, MOCK_STATE_PATH)
+        regenerate_mock_pages(seed, load_pool())
+
+
 def push_backup(message, state):
     """Best-effort git commit + push of the regenerated pages + a full copy
     of state.json to GitHub as an offsite backup/history. Never raises -- a
@@ -785,6 +806,7 @@ def entry_with_msg():
 def mock_entry():
     if not require_auth():
         return redirect(url_for("login"))
+    ensure_mock_state()
 
     state = load_state(MOCK_STATE_PATH)
     pool = load_pool()
@@ -972,6 +994,7 @@ def mock_entry():
 def mock_submit_pick():
     if not require_auth():
         return redirect(url_for("login"))
+    ensure_mock_state()
 
     player_name = request.form.get("player_name", "").strip()
     override_team = request.form.get("override_team", "").strip()
@@ -1033,6 +1056,7 @@ def mock_submit_pick():
 def mock_undo_pick():
     if not require_auth():
         return redirect(url_for("login"))
+    ensure_mock_state()
 
     with StateLock(MOCK_LOCK_PATH):
         state = load_state(MOCK_STATE_PATH)
@@ -1054,6 +1078,7 @@ def mock_undo_pick():
 def mock_generate_grades():
     if not require_auth():
         return redirect(url_for("login"))
+    ensure_mock_state()
 
     api_key = read_anthropic_key()
     if not api_key:
@@ -1118,6 +1143,7 @@ def mock_generate_grades():
 def mock_clear_grade():
     if not require_auth():
         return redirect(url_for("login"))
+    ensure_mock_state()
 
     team = request.form.get("team", "").strip()
     if not team:
