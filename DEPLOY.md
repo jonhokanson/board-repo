@@ -106,10 +106,15 @@ sudo systemctl daemon-reload
 sudo systemctl restart tbml-draft-app
 ```
 
-**Nothing else needed** -- no nginx changes (the mock pages are under the existing static root),
-no separate git remote/token (mock picks are never pushed to GitHub -- see the code comment on
-`push_backup()`), and `mock_state.json`/`mock_state.json.lock` are already git-ignored so
-`deploy.sh` will never touch your in-progress mock picks.
+**nginx** -- the rendered mock *pages* (`/mock/board/*.html`, `/mock/index.html`) are plain static
+files under the existing document root, so they need no nginx changes. But the mock *pick-entry
+routes* (`/mock/entry` and everything under it, `/mock/reset`) are Flask routes, exactly like
+`/entry` -- they need their own proxy block, or nginx will 404 them as missing static files before
+they ever reach the app. See step 8 below, which now includes these alongside `/entry`.
+
+**No separate git remote/token needed** -- mock picks are never pushed to GitHub (see the code
+comment on `push_backup()`), and `mock_state.json`/`mock_state.json.lock` are already git-ignored
+so `deploy.sh` will never touch your in-progress mock picks.
 
 ## 4. Ownership
 
@@ -159,11 +164,11 @@ sudo journalctl -u tbml-draft-app -n 20 --no-pager
 ```
 Should show the Flask app running and listening on `127.0.0.1:5055` with no errors.
 
-## 8. nginx: proxy /entry to the app
+## 8. nginx: proxy /entry (and /mock/entry, /mock/reset) to the app
 
-Everything else keeps being served as static files exactly as today -- only the `/entry` path (the
-pick-entry form and its API) needs to reach the live app. Add this inside the existing `server {}`
-block (same file as the current `root /var/www/html;` line):
+Everything else keeps being served as static files exactly as today -- only the pick-entry paths
+(the forms and their APIs, real and mock alike) need to reach the live app. Add this inside the
+existing `server {}` block (same file as the current `root /var/www/html;` line):
 ```
 location /entry {
     proxy_pass http://127.0.0.1:5055;
@@ -181,14 +186,40 @@ location /entry/events {
     proxy_cache off;
     proxy_read_timeout 3600s;
 }
+
+location /mock/entry {
+    proxy_pass http://127.0.0.1:5055;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+
+location /mock/reset {
+    proxy_pass http://127.0.0.1:5055;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
 ```
-The second block is for the real-time board updates (Server-Sent Events) -- every open board page
-holds a long-lived connection here so it can be pushed a refresh the instant a pick lands, instead
-of polling on a timer. It needs `proxy_buffering off` specifically, or nginx will hold the whole
-response in a buffer instead of streaming it through as it's generated, which silently breaks the
-real-time push (the page would still work, just fall back to the safety-net poll every 30s). nginx
-matches the more specific `/entry/events` block for that path automatically, so this doesn't change
-anything about how `/entry` itself is handled.
+The `/entry/events` block is for the real-time board updates (Server-Sent Events) -- every open
+board page holds a long-lived connection here so it can be pushed a refresh the instant a pick
+lands, instead of polling on a timer. It needs `proxy_buffering off` specifically, or nginx will
+hold the whole response in a buffer instead of streaming it through as it's generated, which
+silently breaks the real-time push (the page would still work, just fall back to the safety-net
+poll every 30s). nginx matches the more specific `/entry/events` block for that path automatically,
+so this doesn't change anything about how `/entry` itself is handled.
+
+The `/mock/entry` block is a prefix match, so it also covers `/mock/entry/pick`,
+`/mock/entry/undo`, `/mock/entry/generate-grades`, `/mock/entry/clear-grade`, and
+`/mock/entry/msg` -- every mock pick-entry route lives under that one path. `/mock/reset` needs
+its own block since it doesn't start with `/mock/entry`. Neither needs the SSE-specific settings
+-- the mock pages reuse the real `/entry/events` stream rather than opening a second one (see
+"Mock draft sandbox" above), so there's no long-lived connection to worry about here. Without
+these two blocks, `/mock/entry` and `/mock/reset` 404 as missing static files before ever
+reaching the app -- this is exactly what happened on first rollout (2026-08-22): the mock routes
+existed in the code and the self-healing bootstrap worked fine once traffic reached them, but
+nginx was never told to send that traffic there in the first place, so `/var/www/html/mock/board`
+stayed empty no matter how many times the app was redeployed or restarted.
 
 Then:
 ```
@@ -202,6 +233,12 @@ Visit `http://192.168.200.223/entry` -- should prompt for the PIN, then show the
 "Chili Dogs is on the clock" (Round 1, Pick 1) and a player search box. Enter a test pick, confirm
 `http://192.168.200.223/board/draft-board.html` updates within a second or two (no 15s wait
 anymore), then use "Undo last pick" to clean it back up before draft night.
+
+If the mock draft sandbox is set up, also visit `http://192.168.200.223/mock/entry` -- same PIN,
+should show a fully-populated demo draft (via the self-healing bootstrap from
+`mock_state.seed.json`) with an amber "Mock Draft" banner. Confirm
+`http://192.168.200.223/mock/board/draft-board.html` loads too. If either 404s, it's almost always
+the nginx blocks from step 8 above being missing.
 
 ## Shipping a code fix or update after this
 
