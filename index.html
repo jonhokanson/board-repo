@@ -69,7 +69,7 @@
   }
   .side-photo img {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; opacity: 0; transition: opacity 1.8s ease;
+    object-fit: cover; opacity: 0; transition: opacity 0.6s ease;
   }
   .side-photo img.show { opacity: 1; }
   .side-photo.left {
@@ -234,7 +234,7 @@ if (trophyPhotos.length > 1) {
     trophyPhotos[trophyIndex].classList.remove('show');
     trophyIndex = (trophyIndex + 1) % trophyPhotos.length;
     trophyPhotos[trophyIndex].classList.add('show');
-  }, 7000);
+  }, 2000);
 }
 </script>
 </body>
