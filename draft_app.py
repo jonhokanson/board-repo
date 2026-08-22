@@ -1217,6 +1217,19 @@ if __name__ == "__main__":
         regenerate_pages(load_state(), load_pool())
     except Exception as e:
         print(f"Startup page regeneration skipped: {e}")
+    # Same idea for the mock sandbox (added 2026-08-22) -- without this, the
+    # mock board pages only refresh when someone actually submits/undoes a
+    # mock pick, generates/clears a roast, or hits reset, so they'd silently
+    # keep showing whatever version was current the last time any of that
+    # happened -- exactly the same staleness bug the real board pages had
+    # before the fix above, just for the mock side. ensure_mock_state() first
+    # so this also works as the very first bootstrap on a brand new install,
+    # with nobody needing to visit /mock/entry by hand before it exists.
+    try:
+        ensure_mock_state()
+        regenerate_mock_pages(load_state(MOCK_STATE_PATH), load_pool())
+    except Exception as e:
+        print(f"Startup mock page regeneration skipped: {e}")
     # threaded=True is required now, not just nice-to-have -- /entry/events
     # holds a long-lived connection per viewer, and without threading that
     # single connection would block every other request (pick entry, board
