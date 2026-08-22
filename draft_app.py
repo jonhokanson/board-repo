@@ -418,7 +418,8 @@ def entry():
             {''.join(f'<option value="{t}">{t}</option>' for t in final_teams)}
           </select>
         </div>
-        <button class="ghost" type="submit">Regenerate</button>
+        <button class="ghost" type="submit" formaction="/entry/generate-grades">Regenerate</button>
+        <button class="danger" type="submit" formaction="/entry/clear-grade" onclick="return confirm('Clear the AI roast for this team? It will fall back to the built-in roast.');">Clear</button>
       </form>
     </div>
   </div>
@@ -651,6 +652,41 @@ def generate_grades():
         kind = "err"
 
     return redirect(url_for("entry_with_msg", msg=msg, kind=kind))
+
+
+@app.route("/entry/clear-grade", methods=["POST"])
+def clear_grade():
+    """Removes a team's cached AI roast so its grade page falls back to the
+    free built-in roast -- for when a generated one isn't funny, or is just
+    wrong somehow. No API call at all, so this can never fail on the network
+    side; the only failure modes are a bad team name or nothing to clear."""
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    team = request.form.get("team", "").strip()
+    if not team:
+        return redirect(url_for("entry_with_msg", msg="Pick a team to clear.", kind="err"))
+
+    with StateLock():
+        state = load_state()
+        pool = load_pool()
+
+        if team not in state["teams"]:
+            return redirect(url_for("entry_with_msg", msg=f"Unknown team: {html.escape(team)}", kind="err"))
+        if team not in state.get("roasts", {}):
+            return redirect(url_for("entry_with_msg", msg=f"{html.escape(team)} doesn't have an AI roast to clear.", kind="ok"))
+
+        del state["roasts"][team]
+        save_state(state)
+        regenerate_pages(state, pool)
+        broadcast_update()
+        git_result = push_backup(f"Cleared AI roast: {team}", state)
+
+    return redirect(url_for(
+        "entry_with_msg",
+        msg=f"Cleared the AI roast for {html.escape(team)} -- back to the built-in one. Backup: {git_result}.",
+        kind="ok",
+    ))
 
 
 @app.route("/entry/msg")
