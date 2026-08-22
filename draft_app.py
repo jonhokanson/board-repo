@@ -34,6 +34,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 POOL_PATH = os.environ.get("POOL_PATH", os.path.join(BASE_DIR, "pool.json"))
 STATE_PATH = os.environ.get("STATE_PATH", os.path.join(BASE_DIR, "state.json"))
 PIN_PATH = os.environ.get("PIN_PATH", os.path.join(BASE_DIR, "pin.txt"))
+# Anthropic API key for the AI-generated draft-grade roast (optional -- the
+# feature works fine without it, just using the free built-in template roast
+# instead). Same git-ignored-file pattern as PIN_PATH/secret_key.txt: never
+# committed, created once by hand on Web01. No systemd Environment= line
+# needed since the default path is already inside BASE_DIR.
+ANTHROPIC_KEY_PATH = os.environ.get("ANTHROPIC_KEY_PATH", os.path.join(BASE_DIR, "anthropic_key.txt"))
 LOCK_PATH = STATE_PATH + ".lock"
 
 # Where the regenerated pages get written -- on Web01 this should be the same
@@ -69,6 +75,13 @@ def read_pin():
     if os.path.exists(PIN_PATH):
         return open(PIN_PATH).read().strip()
     return "0000"  # obvious placeholder -- deployment doc tells Jon to set a real one
+
+
+def read_anthropic_key():
+    if os.path.exists(ANTHROPIC_KEY_PATH):
+        key = open(ANTHROPIC_KEY_PATH).read().strip()
+        return key or None
+    return None
 
 
 def load_pool():
@@ -357,6 +370,60 @@ def entry():
         else '<div class="row"><span>No picks recorded yet.</span></div>'
     )
 
+    # Draft grade roasts (AI) -- see /entry/generate-grades. Purely a manual,
+    # on-demand action; never triggered automatically by a pick/undo.
+    has_ai_key = read_anthropic_key() is not None
+    grades = g.compute_team_grades(state, pool)
+    final_teams = [
+        t for t in state["teams"]
+        if grades[t]["roundsPicked"] > 0 and grades[t]["roundsPicked"] >= grades[t]["liveRounds"]
+    ]
+    roasted_teams = [t for t in final_teams if t in state.get("roasts", {})]
+
+    if not has_ai_key:
+        roast_card = """
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);">No Anthropic API key configured yet on this server -- grade pages are using the free built-in roast. See anthropic_key.txt.</div>
+  </div>
+  """
+    elif not final_teams:
+        roast_card = """
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);">No teams have finished their draft yet -- nothing to generate.</div>
+  </div>
+  """
+    else:
+        n_final = len(final_teams)
+        status_line = (
+            f"{len(roasted_teams)} of {n_final} finished team{'s' if n_final != 1 else ''} "
+            f"{'have' if n_final != 1 else 'has'} an AI roast; the rest use the built-in one."
+        )
+        roast_card = f"""
+  <div class="card">
+    <div class="sub" style="margin-bottom:8px;">Draft grade roasts (AI)</div>
+    <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px;">{status_line}</div>
+    <form method="post" action="/entry/generate-grades">
+      <button class="primary" type="submit">Generate missing AI roasts</button>
+    </form>
+    <div style="margin-top:10px;">
+      <span class="toggle-link" onclick="document.getElementById('regen').classList.toggle('open')">Regenerate one team &rarr;</span>
+    </div>
+    <div id="regen" class="override-row">
+      <form method="post" action="/entry/generate-grades" style="display:flex;gap:10px;width:100%;align-items:flex-end;">
+        <div style="flex:1;">
+          <label for="regenTeam">Team</label>
+          <select id="regenTeam" name="team">
+            {''.join(f'<option value="{t}">{t}</option>' for t in final_teams)}
+          </select>
+        </div>
+        <button class="ghost" type="submit">Regenerate</button>
+      </form>
+    </div>
+  </div>
+  """
+
     body = f"""
   <div class="card">
     <form method="post" action="/entry/pick" id="pickForm">
@@ -379,7 +446,7 @@ def entry():
     <div class="sub" style="margin-bottom:8px;">Recent picks</div>
     <div class="recent">{recent_html}</div>
   </div>
-
+  {roast_card}
   <div class="sub"><a class="home-link" href="/entry/logout" style="text-decoration:underline;">Log out</a></div>
 
   <script>
@@ -511,6 +578,79 @@ def undo_pick():
     return redirect(
         url_for("entry_with_msg", msg=f"Undid: {removed['name']} &rarr; {removed['team']} (Round {removed['round']}). Backup: {git_result}.", kind="ok")
     )
+
+
+@app.route("/entry/generate-grades", methods=["POST"])
+def generate_grades():
+    """Manually triggered (never automatic on a pick/undo -- see generate.py's
+    AI-roast module note for why): calls the Anthropic API for the AI roast
+    on each team that's finished drafting and doesn't have one cached yet,
+    or for a single --team-- team if the form specifies one (used for a
+    deliberate re-roll). Always safe to click even with no API key
+    configured or no teams finished -- both are handled as a clean message,
+    never a crash, and any team the API call fails for just keeps showing
+    its free built-in roast."""
+    if not require_auth():
+        return redirect(url_for("login"))
+
+    api_key = read_anthropic_key()
+    if not api_key:
+        return redirect(url_for(
+            "entry_with_msg",
+            msg="No Anthropic API key configured on this server -- see anthropic_key.txt. Grade pages are still using the built-in roast.",
+            kind="err",
+        ))
+
+    only_team = request.form.get("team", "").strip() or None
+
+    with StateLock():
+        state = load_state()
+        pool = load_pool()
+        grades = g.compute_team_grades(state, pool)
+        state.setdefault("roasts", {})
+
+        def is_final(team):
+            gd = grades[team]
+            return gd["roundsPicked"] > 0 and gd["roundsPicked"] >= gd["liveRounds"]
+
+        if only_team:
+            if only_team not in state["teams"]:
+                return redirect(url_for("entry_with_msg", msg=f"Unknown team: {html.escape(only_team)}", kind="err"))
+            if not is_final(only_team):
+                return redirect(url_for("entry_with_msg", msg=f"{html.escape(only_team)} hasn't finished drafting yet.", kind="err"))
+            targets = [only_team]
+        else:
+            targets = [t for t in state["teams"] if is_final(t) and t not in state["roasts"]]
+
+        if not targets:
+            msg = "Nothing to generate -- every finished team already has an AI roast." if not only_team else "Nothing to generate."
+            return redirect(url_for("entry_with_msg", msg=msg, kind="ok"))
+
+        generated, failed = [], []
+        for team in targets:
+            roast = g.generate_ai_roast(grades[team], api_key)
+            if roast:
+                state["roasts"][team] = roast
+                generated.append(team)
+            else:
+                failed.append(team)
+
+        save_state(state)
+        regenerate_pages(state, pool)
+        broadcast_update()
+        git_result = push_backup(f"AI roast generated: {', '.join(generated) or 'none'}", state) if generated else "skipped (nothing generated)"
+
+    if generated and not failed:
+        msg = f"Generated AI roast{'s' if len(generated) != 1 else ''} for: {html.escape(', '.join(generated))}. Backup: {git_result}."
+        kind = "ok"
+    elif generated and failed:
+        msg = f"Generated for {html.escape(', '.join(generated))}. Failed for {html.escape(', '.join(failed))} (built-in roast still showing for them). Backup: {git_result}."
+        kind = "err"
+    else:
+        msg = f"AI generation failed for {html.escape(', '.join(failed))} -- check the API key and Web01's internet access. Built-in roast is still showing."
+        kind = "err"
+
+    return redirect(url_for("entry_with_msg", msg=msg, kind=kind))
 
 
 @app.route("/entry/msg")

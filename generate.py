@@ -7,6 +7,8 @@ import math
 import os
 import random
 import re
+import urllib.error
+import urllib.request
 from yahoo_ids import YAHOO_IDS
 
 # Paths are relative to this file's own location, not hardcoded, so this
@@ -22,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.4.0"
+APP_VERSION = "0.2.5.0"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -473,6 +475,99 @@ def generate_roast(g):
     lines.append(rng.choice(ROAST_CLOSERS))
     return " ".join(lines)
 
+# ---------------------------------------------------------------------------
+# AI-generated roast -- an optional upgrade over generate_roast() above. Only
+# ever called from an explicit "Generate" action on the /entry page (never
+# automatically on a pick/undo), and only ever with the caller already
+# holding a real API key -- see draft_app.py's read_anthropic_key(). Results
+# are meant to be cached by the caller (state["roasts"][team]) so this never
+# runs more than once per team unless someone deliberately re-rolls it.
+#
+# Deliberately uses stdlib urllib instead of the `anthropic` package -- one
+# fewer dependency to install on Web01, and the Messages API is a plain JSON
+# POST. generate_ai_roast() must never raise: any failure (missing/bad key,
+# network error, timeout, malformed response) returns None so the caller
+# falls back to generate_roast(), and a flaky API call can never leave a
+# grade page broken or blank.
+# ---------------------------------------------------------------------------
+
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_API_VERSION = "2023-06-01"
+# Haiku tier -- fast and cheap, plenty for a few sentences of trash talk.
+# Override via env var if Anthropic retires/renames this model id later.
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
+ANTHROPIC_MAX_TOKENS = 220
+ANTHROPIC_TIMEOUT_SECONDS = 15
+
+ROAST_SYSTEM_PROMPT = (
+    "You write short, funny commentary for a friend group's fantasy football "
+    "keeper league (the Ted Brown Memorial League). You'll be given one team's "
+    "final draft results: their letter grade, full roster with each pick's "
+    "round and value versus ADP consensus, best value pick, biggest reach, and "
+    "weakest position group. Write 3-5 sentences of sharp, funny full-roast-"
+    "style trash talk about how this team drafted -- brutal one-liners are "
+    "encouraged for bad grades. Keep it entirely about fantasy football "
+    "performance (reaches, steals, positional weaknesses), never personal, "
+    "and never punch at anything outside the draft itself. Output only the "
+    "roast paragraph -- no preamble, no sign-off, no quotation marks around it."
+)
+
+
+def _ai_roast_prompt(g):
+    """Same underlying facts generate_roast() uses (letter grade, full
+    roster with round/value/tag, best value, biggest reach, weakest
+    position), formatted as plain text for the model instead of picked from
+    a template."""
+    lines = [f"Team: {g['team']} (draft slot #{g['slot']})", f"Overall grade: {g['grade']}", "", "Full roster:"]
+    for row in g["rows"]:
+        if row["value"] is not None:
+            val = f"{row['value']:+d} rd vs ADP"
+        else:
+            val = "not scored"
+        tag = f" [{row['tag']}]" if row["tag"] else ""
+        lines.append(f"  Round {row['round']}: {row['name']} ({row['pos']}) -- {val}{tag}")
+    if g["bestValue"]:
+        bv = g["bestValue"]
+        lines.append(f"\nBest value pick: {bv['name']}, Round {bv['round']} ({bv['value']:+d} rounds vs ADP)")
+    if g["biggestReach"] and g["biggestReach"]["value"] is not None and g["biggestReach"]["value"] < 0:
+        br = g["biggestReach"]
+        lines.append(f"Biggest reach: {br['name']}, Round {br['round']} ({br['value']:+d} rounds vs ADP)")
+    if g["weakestPos"]:
+        wp = g["weakestPos"]
+        lines.append(f"Weakest position group: {wp} (grade {g['posGrades'][wp]['grade']})")
+    return "\n".join(lines)
+
+
+def generate_ai_roast(g, api_key):
+    """Returns a roast paragraph from the Anthropic API, or None on any
+    failure. See module note above for why this never raises."""
+    if not api_key:
+        return None
+    try:
+        body = json.dumps({
+            "model": ANTHROPIC_MODEL,
+            "max_tokens": ANTHROPIC_MAX_TOKENS,
+            "system": ROAST_SYSTEM_PROMPT,
+            "messages": [{"role": "user", "content": _ai_roast_prompt(g)}],
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            ANTHROPIC_API_URL,
+            data=body,
+            method="POST",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": ANTHROPIC_API_VERSION,
+                "content-type": "application/json",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=ANTHROPIC_TIMEOUT_SECONDS) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        text = "".join(
+            block.get("text", "") for block in payload.get("content", []) if block.get("type") == "text"
+        ).strip()
+        return text or None
+    except Exception:  # noqa: BLE001 -- deliberately broad, see module note above
+        return None
 
 
 def render_draft_board(derived, state):
@@ -1544,11 +1639,19 @@ def render_grade_page(g, state):
 
     # Roast commentary only shows once the draft is actually final for this
     # team -- see generate_roast for why (reads like a recap, not live
-    # narration on a roster that's still half-built).
-    roast_text = generate_roast(g) if is_final else None
+    # narration on a roster that's still half-built). A cached AI roast
+    # (generated on demand from the /entry page, see draft_app.py) always
+    # wins if one exists; otherwise fall back to the free, always-available
+    # template roast so every team shows *something* the moment it's final.
+    ai_roast = state.get("roasts", {}).get(team) if is_final else None
+    roast_text = ai_roast or (generate_roast(g) if is_final else None)
+    roast_source_badge = (
+        '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:4px;background:rgba(59,167,255,0.15);color:var(--accent);margin-left:8px;">AI</span>'
+        if ai_roast else ''
+    )
     if roast_text:
         roast_html = f'''<div style="background:linear-gradient(135deg, rgba(226,86,79,0.10), rgba(59,167,255,0.06));border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#e2564f;margin-bottom:10px;">&#128293; Post-Draft Roast</div>
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#e2564f;margin-bottom:10px;">&#128293; Post-Draft Roast{roast_source_badge}</div>
       <div style="font-size:14px;line-height:1.55;color:var(--text);">{roast_text}</div>
     </div>'''
     else:

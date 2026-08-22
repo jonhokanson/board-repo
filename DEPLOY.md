@@ -57,6 +57,18 @@ echo "YOUR_PIN_HERE" | sudo tee /opt/tbml-draft-app/pin.txt
 sudo python3 -c "import os; print(os.urandom(24).hex())" | sudo tee /opt/tbml-draft-app/secret_key.txt
 ```
 
+**Anthropic API key** -- optional, only needed for the AI-generated draft-grade roast (added
+2026-08-22; without this file the feature just falls back to the free built-in roast, so it's
+safe to skip this step entirely and add it later). Get a key from console.anthropic.com (Settings
+-> API Keys), then:
+```
+echo "YOUR_KEY_HERE" | sudo tee /opt/tbml-draft-app/anthropic_key.txt
+sudo chown www-data:www-data /opt/tbml-draft-app/anthropic_key.txt
+sudo chmod 600 /opt/tbml-draft-app/anthropic_key.txt
+```
+No systemd/env var changes or restart needed -- `draft_app.py` reads this file fresh every time
+someone clicks "Generate" on the `/entry` page.
+
 ## 4. Ownership
 
 The service runs as `www-data` (same user as `board-sync.service` used to), and needs to write
