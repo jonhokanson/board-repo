@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.2.0"
+APP_VERSION = "0.2.2.1"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -289,7 +289,12 @@ def compute_team_grades(state, pool):
             overall_rank = info.get("overallRank")
             value = None
             tag = None
-            if overall_rank:
+            # K/DEF are excluded from value scoring entirely (not just the
+            # positional bars) -- they're forced picks with no meaningful
+            # ADP-implied "expected round" in a 1-per-team league, so scoring
+            # them just drags every team's grade down by the same amount and
+            # tells you nothing about who actually drafted well.
+            if overall_rank and pk["pos"] in GRADE_POSITIONS:
                 expected_round = math.ceil(overall_rank / n)
                 value = pk["round"] - expected_round
                 if value >= STEAL_THRESHOLD:
