@@ -5,6 +5,7 @@ to regenerate both pages in sync."""
 import json
 import math
 import os
+import random
 import re
 from yahoo_ids import YAHOO_IDS
 
@@ -21,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.2.1"
+APP_VERSION = "0.2.3.0"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -364,6 +365,114 @@ def compute_team_grades(state, pool):
             "liveRounds": live_rounds,
         }
     return grades
+
+
+# ---------------------------------------------------------------------------
+# Post-draft roast commentary -- lighthearted trash talk generated purely
+# from each team's own grade data. No external calls (no API key, no
+# network dependency, nothing that can fail on draft day) -- just a bank of
+# template lines picked with a seed derived from the team's actual picks, so
+# the same final roster always gets the same roast instead of it reshuffling
+# on every page refresh. Only rendered once a team's draft is fully final
+# (see is_final in render_grade_page) so this reads like a recap, not
+# commentary on a roster that's still half-built.
+# ---------------------------------------------------------------------------
+
+ROAST_OPENERS = {
+    "A+": [
+        "Somebody actually did their homework — {team} dismantled the ADP chart so thoroughly it should probably be under investigation.",
+        "{team} didn't draft a fantasy team, they drafted a war crime. Every bye week in this league owes them an apology.",
+    ],
+    "A": [
+        "{team} drafted like they had insider information nobody else got, and honestly, rude.",
+        "Somewhere a scouting department is quietly updating their resume because {team} just made their whole job look unnecessary.",
+    ],
+    "A-": [
+        "{team} played this draft like a chess grandmaster who also reads the waiver wire at 3am. Genuinely annoying to watch.",
+    ],
+    "B+": [
+        "{team} had a good draft. Not a legendary one, not a disaster — just solid, responsible, slightly boring excellence.",
+    ],
+    "B": [
+        "{team} drafted a perfectly fine team that will finish 7-6 and haunt absolutely no one.",
+    ],
+    "B-": [
+        "{team} is living proof you can draft entirely by vibes and still land north of mediocre.",
+    ],
+    "C+": [
+        "{team} took some genuinely questionable swings but somehow it didn't fully implode. Bold strategy.",
+    ],
+    "C": [
+        "{team} drafted like they were filling out a scantron sheet and just started bubbling in C for every question.",
+    ],
+    "C-": [
+        "{team} reached so often this draft should come with a warning label about overexertion.",
+    ],
+    "D": [
+        "{team} didn't draft a fantasy team so much as assemble a cautionary tale for next year's rookies.",
+        "Somewhere, an ADP chart is filing a restraining order against {team}.",
+    ],
+}
+ROAST_DEFAULT_OPENERS = ROAST_OPENERS["C"]
+
+ROAST_STEAL_LINES = [
+    "Grabbing {name} in Round {round} was either genius or the rest of the league fell asleep at the wheel — either way, {name}'s a walking receipt now.",
+    "{name} in Round {round} is the one pick this team will bring up unprompted at every league gathering until 2031.",
+    "Somehow {name} fell to Round {round} and this team just quietly pocketed the free value like nothing happened.",
+]
+
+ROAST_REACH_LINES = [
+    "Taking {name} in Round {round} wasn't a reach, it was a full-extension diving catch for a ball that was never thrown.",
+    "{name} in Round {round}? The rest of the league collectively muted their mics so nobody would laugh out loud.",
+    "History will remember Round {round}'s {name} pick the way it remembers other great unforced errors.",
+]
+
+ROAST_WEAK_POS_LINES = [
+    "The {pos} room graded out at a {grade}, which is a nice way of saying it needs a moment of silence.",
+    "Somebody's {pos} corps graded {grade} and needs to be handled with the same urgency as a grease fire.",
+    "{pos} came in at a {grade} — bold of this team to punt an entire position group and just live with it.",
+]
+
+ROAST_CLOSERS = [
+    "See everyone at the podium on draft day, where none of this can be quietly edited after the fact.",
+    "Print this page. Laminate it. Bring it to the league group chat the second things go sideways.",
+    "This has been an entirely fact-based recap and any resemblance to actual draft strategy is purely coincidental.",
+    "The algorithm doesn't care about your feelings. Neither will the rest of the league.",
+]
+
+
+def generate_roast(g):
+    """Deterministic-per-roster roast paragraph for a team's grade page, or
+    None if there's nothing gradeable to work with yet (e.g. every pick was
+    K/DEF, which can't happen in practice given the roster slots, but don't
+    crash if it somehow does)."""
+    if g["avgValue"] is None:
+        return None
+
+    seed_key = g["team"] + "|" + "|".join(r["name"] for r in g["rows"])
+    rng = random.Random(seed_key)
+
+    opener = rng.choice(ROAST_OPENERS.get(g["grade"], ROAST_DEFAULT_OPENERS)).format(team=g["team"])
+    lines = [opener]
+
+    supporting = []
+    bv = g["bestValue"]
+    if bv and bv["value"] is not None and bv["value"] > 0:
+        supporting.append(rng.choice(ROAST_STEAL_LINES).format(name=bv["name"], round=bv["round"]))
+    br = g["biggestReach"]
+    if br and br["value"] is not None and br["value"] < 0:
+        supporting.append(rng.choice(ROAST_REACH_LINES).format(name=br["name"], round=br["round"]))
+    if g["weakestPos"]:
+        wp = g["weakestPos"]
+        wp_grade = g["posGrades"][wp]["grade"]
+        supporting.append(rng.choice(ROAST_WEAK_POS_LINES).format(pos=wp, grade=wp_grade))
+
+    if supporting:
+        lines.extend(rng.sample(supporting, k=min(2, len(supporting))))
+
+    lines.append(rng.choice(ROAST_CLOSERS))
+    return " ".join(lines)
+
 
 
 def render_draft_board(derived, state):
@@ -1424,6 +1533,7 @@ def render_grade_page(g, state):
     rounds_picked = g["roundsPicked"]
 
     started = rounds_picked > 0
+    is_final = started and rounds_picked >= live_rounds
     grade_display = g["grade"] if started else "—"
     if started and rounds_picked < live_rounds:
         status_line = f"Live grade &middot; {rounds_picked} of {live_rounds} rounds picked &middot; updates as picks land"
@@ -1431,6 +1541,18 @@ def render_grade_page(g, state):
         status_line = f"Final grade &middot; all {live_rounds} live rounds picked"
     else:
         status_line = "Grade pending &mdash; check back once the draft gets underway"
+
+    # Roast commentary only shows once the draft is actually final for this
+    # team -- see generate_roast for why (reads like a recap, not live
+    # narration on a roster that's still half-built).
+    roast_text = generate_roast(g) if is_final else None
+    if roast_text:
+        roast_html = f'''<div style="background:linear-gradient(135deg, rgba(226,86,79,0.10), rgba(59,167,255,0.06));border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#e2564f;margin-bottom:10px;">&#128293; Post-Draft Roast</div>
+      <div style="font-size:14px;line-height:1.55;color:var(--text);">{roast_text}</div>
+    </div>'''
+    else:
+        roast_html = ''
 
     def stat_tile(label, color, value_html, sub_html):
         return f'''<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
@@ -1541,6 +1663,8 @@ def render_grade_page(g, state):
       {value_score_tile}
       {weakest_tile}
     </div>
+
+    {roast_html}
 
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:22px;">
       <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:12px;">Positional Grades</div>
