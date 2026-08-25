@@ -19,17 +19,19 @@
     "Chili Dogs": {
       "keep": {
         "name": "Chase Brown",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Cincinnati Bengals"
       },
       "protect": [
         "Bijan Robinson",
-        "Drake Maye"
+        "Malik Nabers"
       ]
     },
     "Murphy's Law": {
       "keep": {
         "name": "Saquon Barkley",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Philadelphia Eagles"
       },
       "protect": [
         "Marvin Harrison Jr.",
@@ -39,7 +41,8 @@
     "Those Bastards": {
       "keep": {
         "name": "Christian McCaffrey",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "San Francisco 49ers"
       },
       "protect": [
         "Omarion Hampton",
@@ -49,7 +52,8 @@
     "Just The Tip": {
       "keep": {
         "name": "Derrick Henry",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Baltimore Ravens"
       },
       "protect": [
         "Josh Jacobs",
@@ -59,7 +63,8 @@
     "Easy Money": {
       "keep": {
         "name": "Ja'Marr Chase",
-        "pos": "WR"
+        "pos": "WR",
+        "nflTeam": "Cincinnati Bengals"
       },
       "protect": [
         "Kenneth Walker",
@@ -69,7 +74,8 @@
     "Below Me": {
       "keep": {
         "name": "Trey McBride",
-        "pos": "TE"
+        "pos": "TE",
+        "nflTeam": "Arizona Cardinals"
       },
       "protect": [
         "De'Von Achane",
@@ -79,7 +85,8 @@
     "Hairy Beavers": {
       "keep": {
         "name": "Jonathan Taylor",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Indianapolis Colts"
       },
       "protect": [
         "CeeDee Lamb",
@@ -89,7 +96,8 @@
     "IT Militia": {
       "keep": {
         "name": "Josh Allen",
-        "pos": "QB"
+        "pos": "QB",
+        "nflTeam": "Buffalo Bills"
       },
       "protect": [
         "George Pickens",
@@ -99,7 +107,8 @@
     "I Know What I Did": {
       "keep": {
         "name": "Jahmyr Gibbs",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Detroit Lions"
       },
       "protect": [
         "Puka Nacua",
@@ -109,7 +118,8 @@
     "Old No 7": {
       "keep": {
         "name": "James Cook III",
-        "pos": "RB"
+        "pos": "RB",
+        "nflTeam": "Buffalo Bills"
       },
       "protect": [
         "Amon-Ra St. Brown",
@@ -131,7 +141,11 @@
       "guaranteed": null
     },
     "Easy Money": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Kenneth Walker",
+        "pos": "RB",
+        "nflTeam": "Kansas City Chiefs"
+      }
     },
     "Below Me": {
       "guaranteed": null
@@ -149,5 +163,12 @@
       "guaranteed": null
     }
   },
-  "picks": []
+  "picks": [
+    {
+      "round": 1,
+      "team": "Chili Dogs",
+      "name": "Justin Jefferson",
+      "pos": "WR"
+    }
+  ]
 }
