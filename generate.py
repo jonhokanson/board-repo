@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.10.1"
+APP_VERSION = "0.2.11.0"
 
 # This season's draft year -- used to work out "reigning champion" / "last
 # season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and
@@ -344,6 +344,27 @@ def team_slug(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
+def ordinal(n):
+    """1 -> '1st', 2 -> '2nd', 3 -> '3rd', 4 -> '4th', 11-13 -> 'th' (not
+    'st'/'nd'/'rd') even though they end in 1/2/3."""
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+# Rank-badge colors for the top 3 league-wide spots -- loosely medal-toned
+# (gold/silver/bronze) but kept within the existing dark-panel palette
+# rather than literal medal colors, so they don't clash. Rank 4+ just uses
+# the theme's neutral --text-dim, no special color.
+RANK_COLORS = {1: "#f5c542", 2: "#c7cdd3", 3: "#d98c4a"}
+
+
+def rank_color(rank):
+    return RANK_COLORS.get(rank, "var(--text-dim)")
+
+
 def compute_team_grades(state, pool):
     """Returns {team_name: grade_data} for every team, built purely from
     state["picks"] + pool.json's overallRank -- safe to call at any point
@@ -468,6 +489,39 @@ def compute_team_grades(state, pool):
             "roundsPicked": len(team_picks),
             "liveRounds": live_rounds,
         }
+
+    # League-wide rank (1st-10th) by avgValue -- best value vs. ADP first.
+    # Standard competition ranking: teams tied on avgValue share a rank, and
+    # the next distinct value skips ahead by the tie count (1, 2, 2, 4 --
+    # same convention as a golf leaderboard), so "3rd place" always means
+    # exactly two teams graded out ahead of you. Ties are broken only for
+    # *display ordering* (draft slot, lower first) -- the rank NUMBER shown
+    # is still shared. Teams with no graded picks yet (avgValue is None --
+    # haven't picked, or every pick so far is K/DEF, which is excluded from
+    # value scoring entirely) are left unranked (rank=None) rather than
+    # bunched at the bottom as a fake last place, same spirit as the letter
+    # grade showing "—" instead of a bogus "F" pre-draft. This runs on every
+    # call, live mid-draft included, so rank is exactly as live/provisional
+    # as the letter grade already is -- it can and will shuffle as more
+    # picks land, same as avgValue itself does.
+    ranked_teams = sorted(
+        (t for t in teams if grades[t]["avgValue"] is not None),
+        key=lambda t: (-grades[t]["avgValue"], grades[t]["slot"]),
+    )
+    total_ranked = len(ranked_teams)
+    prev_value, rank = None, 0
+    for i, t in enumerate(ranked_teams, start=1):
+        value = grades[t]["avgValue"]
+        if value != prev_value:
+            rank = i
+        grades[t]["rank"] = rank
+        grades[t]["totalRanked"] = total_ranked
+        prev_value = value
+    for t in teams:
+        if grades[t]["avgValue"] is None:
+            grades[t]["rank"] = None
+            grades[t]["totalRanked"] = total_ranked
+
     return grades
 
 
@@ -2018,6 +2072,17 @@ def render_grade_page(g, state):
     else:
         status_line = "Grade pending &mdash; check back once the draft gets underway"
 
+    # League-wide rank badge -- see compute_team_grades' ranking pass for how
+    # this is computed (standard competition ranking on avgValue, ties share
+    # a rank). Only rendered once this team has at least one graded pick
+    # (rank is None otherwise, same gating as the letter grade itself); it's
+    # exactly as live/provisional as the grade until every team is final.
+    if g.get("rank"):
+        rc = rank_color(g["rank"])
+        rank_badge_html = f'''<div style="display:inline-block;font-size:12.5px;font-weight:800;letter-spacing:.02em;color:{rc};background:rgba(255,255,255,0.05);border:1px solid {rc};border-radius:999px;padding:5px 14px;margin:2px 0 14px;">Ranked {ordinal(g["rank"])} of {g["totalRanked"]}</div>'''
+    else:
+        rank_badge_html = ''
+
     # Roast commentary only shows once the draft is actually final for this
     # team -- see generate_roast for why (reads like a recap, not live
     # narration on a roster that's still half-built). A cached AI roast
@@ -2144,6 +2209,7 @@ def render_grade_page(g, state):
   <div style="text-align:center;padding:22px 24px 26px;">
     <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">{league} &middot; 2026 Draft Recap</div>
     <div style="width:104px;height:104px;border-radius:50%;background:var(--accent-bg);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:2.8rem;font-weight:800;color:var(--accent);margin:0 auto 14px;">{grade_display}</div>
+    {rank_badge_html}
     <h1 style="font-size:1.9rem;font-weight:800;margin:0 0 4px;letter-spacing:-0.01em;"><a class="home-link" href="/" title="Back to TBML draft home">{team}</a></h1>
     <div style="color:var(--text-dim);font-size:13px;">Draft Slot #{g["slot"]} &middot; {status_line}</div>
   </div>
@@ -2190,22 +2256,48 @@ setInterval(() => {{ if (!sseConnected) location.reload(); }}, SAFETY_POLL_SECON
 
 def render_grades_hub(grades, state):
     league = state.get("leagueName", "Ted Brown Memorial League")
+
+    # Leaderboard order: ranked teams first (best avgValue first, same order
+    # compute_team_grades assigned rank in), unranked teams (no graded picks
+    # yet -- pre-draft, or every pick so far is K/DEF) after in their normal
+    # draft-slot order. Before the draft starts every team is unranked, so
+    # this is a no-op and the hub just shows original slot order same as
+    # before this feature existed.
+    ranked = sorted(
+        (t for t in state["teams"] if grades[t].get("rank") is not None),
+        key=lambda t: (grades[t]["rank"], grades[t]["slot"]),
+    )
+    unranked = [t for t in state["teams"] if grades[t].get("rank") is None]
+    any_ranked = bool(ranked)
+
     cards = []
-    for team in state["teams"]:
+    for team in ranked + unranked:
         g = grades[team]
         started = g["roundsPicked"] > 0
         grade_display = g["grade"] if started else "—"
         sub = f'{g["roundsPicked"]} of {g["liveRounds"]} rounds' if started else "Not started"
         slug = team_slug(team)
+        if g.get("rank"):
+            rc = rank_color(g["rank"])
+            rank_pill = f'<span style="font-size:11px;font-weight:800;color:{rc};background:rgba(255,255,255,0.05);border:1px solid {rc};border-radius:999px;padding:1px 8px;margin-left:7px;flex-shrink:0;">{ordinal(g["rank"])}</span>'
+        else:
+            rank_pill = ''
         cards.append(f'''<a href="grade-{slug}.html" style="display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit;">
       <div style="flex-shrink:0;width:52px;height:52px;border-radius:12px;background:var(--accent-bg);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:var(--accent);">{grade_display}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{team}</div>
+        <div style="display:flex;align-items:center;">
+          <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{team}</div>
+          {rank_pill}
+        </div>
         <div style="font-size:12px;color:var(--text-dim);">Slot #{g["slot"]} &middot; {sub}</div>
       </div>
       <div style="color:var(--accent);font-size:14px;">&rarr;</div>
     </a>''')
     cards_html = ''.join(cards)
+    order_note = (
+        'Ranked by value vs. ADP, best first &middot; updates live as picks land'
+        if any_ranked else 'Ranking appears once teams start drafting'
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -2235,6 +2327,7 @@ def render_grades_hub(grades, state):
 <div class="wrap">
   <h1><a class="home-link" href="/" title="Back to TBML draft home">TBML</a> 2026 Draft Grades</h1>
   <div style="color:var(--text-dim);font-size:13px;">{league}</div>
+  <div style="color:var(--text-dim);font-size:12px;margin-top:2px;">{order_note}</div>
   <a class="nav-link" href="../draft-board.html">&larr; Back to draft board</a>
   <div style="display:flex;flex-direction:column;gap:10px;">
     {cards_html}
