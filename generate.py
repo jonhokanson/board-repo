@@ -24,7 +24,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.9.0"
+APP_VERSION = "0.2.10.0"
+
+# This season's draft year -- used to work out "reigning champion" / "last
+# season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and
+# LEAGUE_TOILETS below without hardcoding a year in three different places.
+DRAFT_YEAR = 2026
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -467,14 +472,56 @@ def compute_team_grades(state, pool):
 
 
 # ---------------------------------------------------------------------------
+# League championship history -- sourced directly from the league's own
+# TBML.Draft.Keeper.Restricts.Rules.xlsx "Championships" tab (every season
+# 2008-2025; 2026 hasn't been played yet). Only seasons won or lost by one
+# of the CURRENT 10 franchises are included below -- a handful of the
+# earliest seasons (2008-2019) were won or lost by teams that have since
+# folded or been renamed (Diesel, Goose Lake Mafia, Sausage Party), and
+# there's no reliable mapping from those to a current team, so those years
+# are simply left out rather than guessed at. Every one of the 10 team names
+# below has fielded a team continuously since at least 2017 (per the
+# spreadsheet's own keeper-history tracking), so what IS included is solid.
+LEAGUE_HISTORY_START = 2008
+LEAGUE_CHAMPIONSHIPS = {
+    "IT Militia": [2009, 2012],
+    "I Know What I Did": [2010, 2015, 2018, 2022],
+    "Below Me": [2011, 2020],
+    "Murphy's Law": [2016, 2021],
+    "Old No 7": [2023, 2025],
+    "Chili Dogs": [2024],
+}
+LEAGUE_TOILETS = {
+    "Below Me": [2012, 2015, 2017],
+    "Easy Money": [2013, 2018, 2019],
+    "Murphy's Law": [2014, 2023],
+    "Hairy Beavers": [2020],
+    "IT Militia": [2021, 2022],
+    "Those Bastards": [2024],
+    "Just The Tip": [2025],
+}
+# Across the entire 2008-2025 record, no current franchise has EVER repeated
+# as champion the year immediately after winning -- so the league's "Legacy
+# Fund" payout (per the spreadsheet's Master Rules tab, eligible only for a
+# back-to-back win) has never once been claimed. Worth surfacing for
+# whoever's reigning.
+LEAGUE_HAS_HAD_A_REPEAT_CHAMPION = False
+# Once this many years have passed since a past champion's last title with
+# no repeat, it's fair game to call them a former contender rather than a
+# recent one.
+LONG_DROUGHT_YEARS = 8
+
+
+# ---------------------------------------------------------------------------
 # Post-draft roast commentary -- lighthearted trash talk generated purely
-# from each team's own grade data. No external calls (no API key, no
-# network dependency, nothing that can fail on draft day) -- just a bank of
-# template lines picked with a seed derived from the team's actual picks, so
-# the same final roster always gets the same roast instead of it reshuffling
-# on every page refresh. Only rendered once a team's draft is fully final
-# (see is_final in render_grade_page) so this reads like a recap, not
-# commentary on a roster that's still half-built.
+# from each team's own grade data (plus the league history above). No
+# external calls (no API key, no network dependency, nothing that can fail
+# on draft day) -- just a bank of template lines picked with a seed derived
+# from the team's actual picks, so the same final roster always gets the
+# same roast instead of it reshuffling on every page refresh. Only rendered
+# once a team's draft is fully final (see is_final in render_grade_page) so
+# this reads like a recap, not commentary on a roster that's still
+# half-built.
 # ---------------------------------------------------------------------------
 
 ROAST_OPENERS = {
@@ -605,6 +652,33 @@ ROAST_MANY_STEALS_LINES = [
     "{count} steals deep into this draft and the rest of the league is still pretending the ADP chart wasn't sitting right there the whole time.",
 ]
 
+ROAST_REIGNING_CHAMP_LINES = [
+    "{team} walks in as the defending champ off a {year} title -- and in {history_start}-{last_season} of this league's history, nobody has EVER repeated. The Legacy Fund is still unclaimed and daring somebody to try.",
+    "Fresh off winning it all in {year}, {team} drafts like a team that knows the target is on their back and mostly doesn't care.",
+    "{team} is the reigning champion, which around here mostly just means everyone else gets to aim their reach jokes a little more personally this year.",
+    "Nobody in this league has ever gone back-to-back, and {team} -- fresh off {year} -- is either about to change that or about to become a very familiar cautionary tale.",
+]
+ROAST_DYNASTY_LINES = [
+    "{team} has now won this league {count} times, which is either an impressive resume or a sign the rest of the league needs to try harder. Given this draft, guess which.",
+    "With {count} titles on the shelf, {team} clearly knows how this works -- the only question is whether this particular roster remembers.",
+    "{count} championships in and {team} is still out here drafting like the trophy case isn't already getting crowded.",
+]
+ROAST_TITLE_DROUGHT_SINCE_LINES = [
+    "{team}'s last title was {year} -- {gap} years and counting since then. This roster is not obviously the one that ends the wait.",
+    "It has been {gap} years since {team} last won it all, back in {year}. Some rebuilds take longer than others.",
+    "{team} used to be a name people worried about, once, in {year}. This draft did not exactly restore the fear.",
+]
+ROAST_TITLE_DROUGHT_LINES = [
+    "{team} has never won this league. Not once. This roster is not obviously the one that changes that.",
+    "Still ringless after all these years, {team} drafted here like a team trying to end the drought -- or at least trying to convince everyone else they were.",
+    "{team} remains one of the last teams in this league without a championship to their name, and this draft did not exactly scream \"this is the year.\"",
+]
+ROAST_OWN_TOILET_CALLBACK_LINES = [
+    "{team} finished in the actual league toilet last season and drafted here like a team with something to prove -- or like a team about to prove the toilet was no fluke.",
+    "Last year's toilet finisher is back, and this draft is either the redemption arc or the sequel nobody asked for.",
+    "{team} spent last season at the bottom of the standings. This roster does not fully put that fear to rest.",
+]
+
 ROAST_CLOSERS = [
     "See everyone at the podium on draft day, where none of this can be quietly edited after the fact.",
     "Print this page. Laminate it. Bring it to the league group chat the second things go sideways.",
@@ -628,9 +702,9 @@ def generate_roast(g):
     places instead: large line banks per category (5-6 options each, so two
     teams hitting the same signal rarely get the same sentence) and pulling
     from as many independent signals as actually apply (steal, reach,
-    weakest position, starter/bench split, flex-RB build, plus the
-    roster-wide reach/steal-count patterns below) rather than a fixed
-    three."""
+    weakest position, starter/bench split, flex-RB build, the roster-wide
+    reach/steal-count patterns, and the team's real championship/toilet
+    history below) rather than a fixed three."""
     if g["avgValue"] is None:
         return None
 
@@ -668,6 +742,29 @@ def generate_roast(g):
         supporting.append(rng.choice(ROAST_MANY_REACHES_LINES).format(count=reach_count))
     if steal_count >= STEAL_COUNT_THRESHOLD:
         supporting.append(rng.choice(ROAST_MANY_STEALS_LINES).format(count=steal_count))
+
+    # Championship/toilet history -- entirely independent of how this draft
+    # actually went, so these fire the same regardless of grade. Folded in
+    # alongside the performance-based signals above (not a separate
+    # section) so a team's history reads as part of the same roast.
+    champ_years = LEAGUE_CHAMPIONSHIPS.get(g["team"], [])
+    toilet_years = LEAGUE_TOILETS.get(g["team"], [])
+    last_season = DRAFT_YEAR - 1
+    if champ_years and champ_years[-1] == last_season:
+        supporting.append(rng.choice(ROAST_REIGNING_CHAMP_LINES).format(
+            team=g["team"], year=champ_years[-1],
+            history_start=LEAGUE_HISTORY_START, last_season=last_season))
+    elif champ_years and (DRAFT_YEAR - champ_years[-1]) >= LONG_DROUGHT_YEARS:
+        # Recency beats title count here -- a two-time champ whose last ring
+        # was over a decade ago reads as "former contender," not "dynasty."
+        supporting.append(rng.choice(ROAST_TITLE_DROUGHT_SINCE_LINES).format(
+            team=g["team"], year=champ_years[-1], gap=DRAFT_YEAR - champ_years[-1]))
+    elif len(champ_years) >= 2:
+        supporting.append(rng.choice(ROAST_DYNASTY_LINES).format(team=g["team"], count=len(champ_years)))
+    elif not champ_years:
+        supporting.append(rng.choice(ROAST_TITLE_DROUGHT_LINES).format(team=g["team"]))
+    if toilet_years and toilet_years[-1] == last_season:
+        supporting.append(rng.choice(ROAST_OWN_TOILET_CALLBACK_LINES).format(team=g["team"]))
 
     if supporting:
         # Vary how many supporting lines make the cut (not always a flat 3)
@@ -737,7 +834,15 @@ ROAST_SYSTEM_PROMPT = (
     "to -4 for allowing 35+) plus sacks/turnovers/TDs; kicker scoring pays "
     "more for longer field goals (3 pts inside 40, up to 5 pts for 50+). "
     "Feel free to reference a team's actual DEF or K pick against these "
-    "buckets for specific, in-universe jokes instead of generic filler."
+    "buckets for specific, in-universe jokes instead of generic filler.\n"
+    "- This is a real league with real history (seasons 2008-2025 played so "
+    "far). You'll be told below whether this team is the reigning champion, "
+    "a multi-time champion, has never won a title, or finished dead last "
+    "('the toilet') last season -- work that in naturally when it lands, "
+    "skip it entirely if it doesn't. No franchise in this league's history "
+    "has ever repeated as champion the year right after winning, which is "
+    "genuinely funny to bring up if you're roasting the current defending "
+    "champ specifically."
 )
 
 
@@ -771,6 +876,23 @@ def _ai_roast_prompt(g):
         lines.append(f"Bench avg value: {bnv:+.1f} rounds vs ADP")
     if g.get("flexFillPos"):
         lines.append(f"W/R/T flex slot filled by: {g['flexFillPos']}")
+
+    last_season = DRAFT_YEAR - 1
+    champ_years = LEAGUE_CHAMPIONSHIPS.get(g["team"], [])
+    toilet_years = LEAGUE_TOILETS.get(g["team"], [])
+    if champ_years:
+        reigning = " -- REIGNING CHAMPION, won it last season" if champ_years[-1] == last_season else ""
+        lines.append(f"\nChampionship history: won the league in {', '.join(str(y) for y in champ_years)}{reigning}.")
+    else:
+        lines.append("\nChampionship history: has never won this league.")
+    if toilet_years:
+        recent = " -- finished last THIS PAST SEASON" if toilet_years[-1] == last_season else ""
+        lines.append(f"Last-place ('toilet') finishes: {', '.join(str(y) for y in toilet_years)}{recent}.")
+    lines.append(
+        f"League trivia: no franchise has ever won back-to-back titles across "
+        f"{LEAGUE_HISTORY_START}-{last_season} (the league's 'Legacy Fund' payout, "
+        f"reserved for a repeat champion, has never been claimed)."
+    )
     return "\n".join(lines)
 
 
