@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.7.0"
+APP_VERSION = "0.2.8.0"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -256,6 +256,75 @@ GRADE_BANDS = [
 STEAL_THRESHOLD = 2.0   # rounds of value to earn a "STEAL" tag
 REACH_THRESHOLD = -2.0  # rounds of value to earn a "REACH" tag
 
+# ---------------------------------------------------------------------------
+# Starting lineup model, per the real TBML Yahoo league settings (captured in
+# the "Fantasy Football Draft 2026" project's tbml-2026-league-rules.md,
+# 2026-08-27): QB, RB, RB, W/T, W/T, W/R/T, K, DEF as starters, then 6 bench
+# spots, no IR -- 8 + 6 = 14 total roster spots, which is exactly this
+# league's 14 draft rounds (12 live + Round 13 protect + Round 14 keep).
+#
+# The notable wrinkle: there is NO dedicated WR slot. RB has 2 guaranteed
+# starting spots that only an RB can fill; WR and TE have zero guaranteed
+# spots and live entirely off the two W/T (WR/TE) flexes and the one W/R/T
+# (WR/RB/TE) flex. A team can legally start 5 RBs and 0 WRs if that's how the
+# draft breaks -- RB scarcity is real in a way WR/TE scarcity isn't, since a
+# thin WR or TE corps can just get out-flexed by the other, but a thin RB
+# corps has nowhere else to hide. POS_SCARCITY below encodes that: it's used
+# to pick which position group gets called out as "weakest" (see
+# compute_team_grades), weighting RB's shortfalls harder and WR/TE's softer,
+# without changing the underlying per-position letter grades themselves.
+ROSTER_SLOTS = [
+    {"slot": "QB", "eligible": {"QB"}},
+    {"slot": "RB", "eligible": {"RB"}},
+    {"slot": "RB", "eligible": {"RB"}},
+    {"slot": "W/T", "eligible": {"WR", "TE"}},
+    {"slot": "W/T", "eligible": {"WR", "TE"}},
+    {"slot": "W/R/T", "eligible": {"WR", "RB", "TE"}},
+    {"slot": "K", "eligible": {"K"}},
+    {"slot": "DEF", "eligible": {"DEF"}},
+]
+BENCH_SLOTS = 6
+
+POS_SCARCITY = {"QB": 1.1, "RB": 1.4, "WR": 0.8, "TE": 0.8}
+
+# Rounds of value gap between a team's starter picks and bench picks before
+# it's worth a roast line calling out the split either direction.
+BENCH_STARTER_GAP_THRESHOLD = 1.0
+
+
+def assign_starter_lineup(rows, pool_by_name):
+    """Tags each row in a team's roster (rows, from compute_team_grades) with
+    row["lineup"] = "starter" or "bench", by greedily slotting players into
+    ROSTER_SLOTS best-player-first (lowest pool.json overallRank = best;
+    unranked players sort last), filling the most position-restrictive slots
+    first (QB/RB/K/DEF, which only one position can fill) before the flexes
+    (W/T, then the fully-open W/R/T) so the flexes get whatever's genuinely
+    left over -- the same way an actual lineup gets set. Best-effort only: if
+    a team's draft is so lopsided a slot has no eligible candidate left (rare
+    in practice with 14 rounds to work with), that slot just goes unfilled
+    rather than raising. Safe to call with a partial (mid-draft) roster --
+    it's only actually surfaced once a team's draft is final, see
+    render_grade_page's is_final."""
+    def rank_key(r):
+        rk = pool_by_name.get(r["name"], {}).get("overallRank")
+        return (rk is None, rk if rk is not None else 0)
+
+    pool = sorted(rows, key=rank_key)
+    restrictive = [s for s in ROSTER_SLOTS if len(s["eligible"]) == 1]
+    flexible = sorted((s for s in ROSTER_SLOTS if len(s["eligible"]) > 1), key=lambda s: len(s["eligible"]))
+
+    used = set()
+    starters = []
+    for slot in restrictive + flexible:
+        pick = next((r for r in pool if r["pos"] in slot["eligible"] and id(r) not in used), None)
+        if pick:
+            used.add(id(pick))
+            starters.append((slot["slot"], pick))
+
+    for r in rows:
+        r["lineup"] = "starter" if id(r) in used else "bench"
+    return starters
+
 
 def letter_grade(avg_value):
     if avg_value is None:
@@ -333,8 +402,23 @@ def compute_team_grades(state, pool):
             })
         rows.sort(key=lambda r: r["round"])
 
+        # Tags each row "starter" or "bench" per the real QB/RB/RB/W-T/W-T/
+        # W-R-T/K/DEF + 6-bench lineup -- see ROSTER_SLOTS above.
+        starter_slots = assign_starter_lineup(rows, pool_by_name)
+
         valued = [r for r in rows if r["value"] is not None]
         avg_value = sum(r["value"] for r in valued) / len(valued) if valued else None
+
+        starter_valued = [r for r in valued if r["lineup"] == "starter"]
+        bench_valued = [r for r in valued if r["lineup"] == "bench"]
+        starter_value = sum(r["value"] for r in starter_valued) / len(starter_valued) if starter_valued else None
+        bench_value = sum(r["value"] for r in bench_valued) / len(bench_valued) if bench_valued else None
+
+        # Which position (if any) filled the fully-open W/R/T flex -- notable
+        # specifically when it's RB, since that's the one starter slot in
+        # this league a team can choose to hand to a 3rd RB instead of a
+        # WR/TE (see the ROSTER_SLOTS comment above).
+        flex_fill_pos = next((pos for slot, r in starter_slots if slot == "W/R/T" for pos in [r["pos"]]), None)
 
         pos_grades = {}
         for pos in GRADE_POSITIONS:
@@ -351,7 +435,17 @@ def compute_team_grades(state, pool):
         best_value = max(valued, key=lambda r: r["value"], default=None)
         biggest_reach = min(valued, key=lambda r: r["value"], default=None)
         graded_pos = {p: g for p, g in pos_grades.items() if g}
-        weakest_pos = min(graded_pos.items(), key=lambda kv: kv[1]["avg"], default=(None, None))
+        # Weighted by POS_SCARCITY so a shaky RB corps (2 guaranteed starting
+        # spots, no flex to hide behind) outranks an equally-shaky WR/TE
+        # corps (0 guaranteed spots, can lean on the other via flex) as the
+        # position actually worth calling out -- see the comment on
+        # POS_SCARCITY above. The displayed grade/avg for whichever position
+        # gets picked is still its real, unweighted value.
+        weakest_pos = min(
+            graded_pos.items(),
+            key=lambda kv: kv[1]["avg"] * POS_SCARCITY.get(kv[0], 1.0),
+            default=(None, None),
+        )
 
         grades[team] = {
             "team": team,
@@ -363,6 +457,9 @@ def compute_team_grades(state, pool):
             "bestValue": best_value,
             "biggestReach": biggest_reach,
             "weakestPos": weakest_pos[0],
+            "starterValue": starter_value,
+            "benchValue": bench_value,
+            "flexFillPos": flex_fill_pos,
             "roundsPicked": len(team_picks),
             "liveRounds": live_rounds,
         }
@@ -435,6 +532,32 @@ ROAST_WEAK_POS_LINES = [
     "{pos} came in at a {grade} — bold of this team to punt an entire position group and just live with it.",
 ]
 
+# This league has zero dedicated WR slots -- 2 dedicated RB spots plus a
+# WR/RB/TE flex means RB is the one position that can't hide behind a flex,
+# so a shaky RB group gets flagged here more often than an equally shaky
+# WR/TE group would. See the POS_SCARCITY comment near ROSTER_SLOTS.
+ROAST_WEAK_RB_LINES = [
+    "The {pos} room graded {grade}, which stings extra in a league with two dedicated RB spots and nowhere to flex your way out of it.",
+    "{pos} at a {grade} is rough anywhere, but in a league that hands you zero dedicated WR spots and forces two RBs into the lineup no matter what, it's a real problem.",
+]
+
+# Bench (6 of 14 roster spots) vs. starter value split -- new material
+# unlocked once starter/bench slots are known (see assign_starter_lineup).
+ROAST_BENCH_BEATS_STARTERS_LINES = [
+    "The bench here graded out better than the actual starting lineup, which is either a deep, well-scouted roster or a quiet admission the wrong guys are starting.",
+    "Six bench spots and somehow the pine is outperforming the lineup that's supposed to be, you know, playing — impressive value-finding, questionable lineup-setting.",
+    "This team's bench could start for at least a couple other rosters in this league. Their actual starters, less so.",
+]
+ROAST_STARTERS_BEAT_BENCH_LINES = [
+    "Every ounce of value went straight into the starting eight, and the bench is pure lottery tickets — a defensible way to build a team, just don't expect much when the injuries start.",
+    "This team spent its capital where it actually counts — the starting lineup — and treated the bench like the afterthought it is.",
+]
+
+ROAST_FLEX_RB_LINES = [
+    "The W/R/T flex went to a running back, which in a league that already forces two dedicated RBs into the lineup means this team is starting three of them by choice.",
+    "Handing the one fully-open flex spot to a THIRD running back is a statement — RB-heavy and proud of it.",
+]
+
 ROAST_CLOSERS = [
     "See everyone at the podium on draft day, where none of this can be quietly edited after the fact.",
     "Print this page. Laminate it. Bring it to the league group chat the second things go sideways.",
@@ -467,10 +590,19 @@ def generate_roast(g):
     if g["weakestPos"]:
         wp = g["weakestPos"]
         wp_grade = g["posGrades"][wp]["grade"]
-        supporting.append(rng.choice(ROAST_WEAK_POS_LINES).format(pos=wp, grade=wp_grade))
+        weak_pos_bank = ROAST_WEAK_RB_LINES if wp == "RB" else ROAST_WEAK_POS_LINES
+        supporting.append(rng.choice(weak_pos_bank).format(pos=wp, grade=wp_grade))
+
+    sv, bnv = g.get("starterValue"), g.get("benchValue")
+    if sv is not None and bnv is not None and abs(sv - bnv) >= BENCH_STARTER_GAP_THRESHOLD:
+        bank = ROAST_BENCH_BEATS_STARTERS_LINES if bnv > sv else ROAST_STARTERS_BEAT_BENCH_LINES
+        supporting.append(rng.choice(bank))
+
+    if g.get("flexFillPos") == "RB":
+        supporting.append(rng.choice(ROAST_FLEX_RB_LINES))
 
     if supporting:
-        lines.extend(rng.sample(supporting, k=min(2, len(supporting))))
+        lines.extend(rng.sample(supporting, k=min(3, len(supporting))))
 
     lines.append(rng.choice(ROAST_CLOSERS))
     return " ".join(lines)
@@ -503,13 +635,37 @@ ROAST_SYSTEM_PROMPT = (
     "You write short, funny commentary for a friend group's fantasy football "
     "keeper league (the Ted Brown Memorial League). You'll be given one team's "
     "final draft results: their letter grade, full roster with each pick's "
-    "round and value versus ADP consensus, best value pick, biggest reach, and "
-    "weakest position group. Write 3-5 sentences of sharp, funny full-roast-"
-    "style trash talk about how this team drafted -- brutal one-liners are "
+    "round and value versus ADP consensus, best value pick, biggest reach, "
+    "weakest position group, and how their starting lineup's value compares "
+    "to their bench's. Write 3-5 sentences of sharp, funny full-roast-style "
+    "trash talk about how this team drafted -- brutal one-liners are "
     "encouraged for bad grades. Keep it entirely about fantasy football "
     "performance (reaches, steals, positional weaknesses), never personal, "
     "and never punch at anything outside the draft itself. Output only the "
-    "roast paragraph -- no preamble, no sign-off, no quotation marks around it."
+    "roast paragraph -- no preamble, no sign-off, no quotation marks around "
+    "it.\n\n"
+    "A few real quirks of this specific league worth working in when they're "
+    "actually relevant to the roster you're given (don't force all of them "
+    "into every roast):\n"
+    "- Standard scoring, not PPR -- no points for catches, just 1 point per "
+    "10 rushing/receiving yards and 1 per 25 passing yards. It's a "
+    "grind-it-out league that rewards volume, not a possession-receiver's "
+    "paradise, so a team that drafted like it was PPR (hoarding short-area "
+    "target hogs) can be roasted for optimizing for the wrong game.\n"
+    "- The starting lineup is QB, RB, RB, W/T, W/T, W/R/T, K, DEF -- there is "
+    "NO dedicated WR slot. Every WR has to win a flex spot against TEs (the "
+    "W/T slots) or against TEs AND RBs (the W/R/T slot). RB is the only "
+    "skill position with guaranteed starting spots and nowhere to flex its "
+    "way out of a bad draft, so a weak RB group is a much bigger problem "
+    "than an equally weak WR or TE group, which can just get flexed around.\n"
+    "- 6 of the 14 roster spots are bench (no IR). If the data shows the "
+    "bench actually graded better than the starters, that's worth a jab -- "
+    "great value-hunting, bad lineup-setting.\n"
+    "- Defense scoring is points-allowed-tiered (10 pts for a shutout down "
+    "to -4 for allowing 35+) plus sacks/turnovers/TDs; kicker scoring pays "
+    "more for longer field goals (3 pts inside 40, up to 5 pts for 50+). "
+    "Feel free to reference a team's actual DEF or K pick against these "
+    "buckets for specific, in-universe jokes instead of generic filler."
 )
 
 
@@ -525,7 +681,8 @@ def _ai_roast_prompt(g):
         else:
             val = "not scored"
         tag = f" [{row['tag']}]" if row["tag"] else ""
-        lines.append(f"  Round {row['round']}: {row['name']} ({row['pos']}) -- {val}{tag}")
+        lineup = f" ({row['lineup']})" if row.get("lineup") else ""
+        lines.append(f"  Round {row['round']}: {row['name']} ({row['pos']}) -- {val}{tag}{lineup}")
     if g["bestValue"]:
         bv = g["bestValue"]
         lines.append(f"\nBest value pick: {bv['name']}, Round {bv['round']} ({bv['value']:+d} rounds vs ADP)")
@@ -535,6 +692,13 @@ def _ai_roast_prompt(g):
     if g["weakestPos"]:
         wp = g["weakestPos"]
         lines.append(f"Weakest position group: {wp} (grade {g['posGrades'][wp]['grade']})")
+    sv, bnv = g.get("starterValue"), g.get("benchValue")
+    if sv is not None:
+        lines.append(f"Starting lineup avg value: {sv:+.1f} rounds vs ADP")
+    if bnv is not None:
+        lines.append(f"Bench avg value: {bnv:+.1f} rounds vs ADP")
+    if g.get("flexFillPos"):
+        lines.append(f"W/R/T flex slot filled by: {g['flexFillPos']}")
     return "\n".join(lines)
 
 
@@ -1621,6 +1785,12 @@ def _value_label(row):
     return f'<span style="font-size:10px;color:var(--text-dim);">{sign}{row["value"]} rd</span>'
 
 
+def _lineup_badge(lineup):
+    if lineup == "bench":
+        return '<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:rgba(147,164,179,0.15);color:var(--text-dim);">Bench</span>'
+    return ''
+
+
 def render_grade_page(g, state):
     team = g["team"]
     league = state.get("leagueName", "Ted Brown Memorial League")
@@ -1709,9 +1879,17 @@ def render_grade_page(g, state):
         <span style="font-size:11px;color:var(--text-dim);width:22px;flex-shrink:0;">R{row["round"]}</span>
         <span style="font-size:12.5px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{row["name"]}</span>
         {_pos_badge(row["pos"])}
+        {_lineup_badge(row.get("lineup"))}
         {_grade_tag(row["tag"])}
       </div>''')
     pick_rows_html = ''.join(pick_rows) if pick_rows else '<div style="font-size:12.5px;color:var(--text-dim);grid-column:1 / -1;text-align:center;padding:12px;">No picks yet.</div>'
+
+    sv, bnv = g.get("starterValue"), g.get("benchValue")
+    if is_final and sv is not None and bnv is not None:
+        sv_sign, bnv_sign = ("+" if sv > 0 else ""), ("+" if bnv > 0 else "")
+        roster_subhead = f'<span style="font-weight:600;color:var(--text-dim);text-transform:none;letter-spacing:normal;font-size:11.5px;">&nbsp;&middot; Starters {sv_sign}{sv:.1f} rd avg &middot; Bench {bnv_sign}{bnv:.1f} rd avg</span>'
+    else:
+        roster_subhead = ''
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1774,12 +1952,12 @@ def render_grade_page(g, state):
       {pos_bars_html}
     </div>
 
-    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:10px;">Full Roster</div>
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:10px;">Full Roster{roster_subhead}</div>
     <div class="roster-grid" style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:8px;margin-bottom:18px;">
       {pick_rows_html}
     </div>
 
-    <div style="font-size:11px;color:var(--text-dim);opacity:0.6;text-align:center;">Value score compares each pick's round to its ADP-implied round (fantasyfootballcalculator.com consensus). Keepers and guaranteed protects aren't scored.</div>
+    <div style="font-size:11px;color:var(--text-dim);opacity:0.6;text-align:center;">Value score compares each pick's round to its ADP-implied round (fantasyfootballcalculator.com consensus). Keepers and guaranteed protects aren't scored. "Bench" tags show this league's real QB/RB/RB/W-T/W-T/W-R-T/K/DEF starting lineup, best-player-first.</div>
   </div>
 </div>
 <script>
