@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.10.0"
+APP_VERSION = "0.2.10.1"
 
 # This season's draft year -- used to work out "reigning champion" / "last
 # season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and
@@ -797,7 +797,14 @@ ANTHROPIC_API_VERSION = "2023-06-01"
 # Haiku tier -- fast and cheap, plenty for a few sentences of trash talk.
 # Override via env var if Anthropic retires/renames this model id later.
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
-ANTHROPIC_MAX_TOKENS = 220
+# Was 220 -- too tight once the system prompt grew a real league scoring/roster
+# rundown plus championship/toilet history (v0.2.8.0-v0.2.10.0): a genuinely
+# detailed 3-5 sentence roast that references specific stats, reaches, and
+# league history routinely ran past 220 tokens and got cut off mid-sentence
+# (caught 2026-08-27 -- Jon noticed two live AI roasts trailing off with no
+# closing punctuation). Bumped to 500, comfortable headroom for 5 dense
+# sentences even when several history/roster signals are all in play.
+ANTHROPIC_MAX_TOKENS = 500
 ANTHROPIC_TIMEOUT_SECONDS = 15
 
 ROAST_SYSTEM_PROMPT = (
@@ -923,6 +930,16 @@ def generate_ai_roast(g, api_key):
         text = "".join(
             block.get("text", "") for block in payload.get("content", []) if block.get("type") == "text"
         ).strip()
+        # Defense in depth against the exact bug caught 2026-08-27: if the
+        # model still runs out of room even at the current ANTHROPIC_MAX_TOKENS
+        # (e.g. a roster with an unusually large number of history/roster
+        # signals all firing at once), the API reports that directly via
+        # stop_reason rather than us having to guess from the text. Treat that
+        # as a failure -- same as a network error -- so the caller falls back
+        # to generate_roast()'s always-complete template roast instead of
+        # ever serving a sentence that trails off with no closing punctuation.
+        if payload.get("stop_reason") == "max_tokens":
+            return None
         return text or None
     except Exception:  # noqa: BLE001 -- deliberately broad, see module note above
         return None
