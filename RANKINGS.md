@@ -64,3 +64,15 @@ since `generate.py` does exact-string lookups). Then regenerate the live pages
 
 Ship it the same way as any other `pool.json`-only change: commit + push to `v2-live-app`, then
 `tbml` on Web01.
+
+## Don't forget the mock draft demo
+
+`mock_state.seed.json` is a full, pre-simulated 12-round mock draft built from `pool.json` --
+after a rankings/ADP refresh it's now drafting stale players unless you regenerate it too. Rerun
+`python3 mock_draft.py` (also resolves paths relative to its own location) to rebuild it against
+the current `pool.json`, then commit + push both `pool.json` and `mock_state.seed.json` together.
+Deploying doesn't automatically pick this up on Web01, though -- `mock_state.json` (the live
+working copy `/mock` actually serves) is separate from the seed and only gets overwritten when
+someone hits "Reset mock draft" on `/mock/entry`. Tell Jon to do that after any deploy that
+includes a refreshed `mock_state.seed.json`, same as reminding him to run `tbml` for anything
+else.
