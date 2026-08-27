@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.8.0"
+APP_VERSION = "0.2.9.0"
 
 POOL_PATH = os.path.join(BASE_DIR, "pool.json")
 STATE_PATH = os.path.join(BASE_DIR, "state.json")
@@ -481,35 +481,53 @@ ROAST_OPENERS = {
     "A+": [
         "Somebody actually did their homework — {team} dismantled the ADP chart so thoroughly it should probably be under investigation.",
         "{team} didn't draft a fantasy team, they drafted a war crime. Every bye week in this league owes them an apology.",
+        "There should be a stewards' inquiry into how {team} pulled this off. No penalty is coming. That's almost worse.",
+        "{team} treated the ADP consensus as a rough draft and then rewrote it from scratch, in pen.",
+        "Somewhere a scouting department just got laid off, because {team} clearly did their job better and for free.",
     ],
     "A": [
         "{team} drafted like they had insider information nobody else got, and honestly, rude.",
         "Somewhere a scouting department is quietly updating their resume because {team} just made their whole job look unnecessary.",
+        "{team} showed up with a plan, executed the plan, and left everyone else improvising. Deeply unsportsmanlike, in the best way.",
+        "This wasn't a draft for {team}, it was a clinic, and nobody signed up to attend it.",
     ],
     "A-": [
         "{team} played this draft like a chess grandmaster who also reads the waiver wire at 3am. Genuinely annoying to watch.",
+        "{team} made good drafting look almost boring, which is its own kind of flex.",
+        "Nothing flashy from {team}, just quietly correct decision after quietly correct decision. Suspicious, honestly.",
     ],
     "B+": [
         "{team} had a good draft. Not a legendary one, not a disaster — just solid, responsible, slightly boring excellence.",
+        "{team} did the fantasy football equivalent of eating their vegetables and going to bed on time. Admirable. Unexciting.",
+        "There's a version of this draft where {team} takes more swings. They didn't take it, and honestly it mostly worked.",
     ],
     "B": [
         "{team} drafted a perfectly fine team that will finish 7-6 and haunt absolutely no one.",
+        "{team}'s draft is the fantasy equivalent of a gray Toyota Camry. Reliable. Forgettable. Gets the job done.",
+        "Nobody's writing a book about {team}'s draft, but nobody's writing a eulogy for it either.",
     ],
     "B-": [
         "{team} is living proof you can draft entirely by vibes and still land north of mediocre.",
+        "{team}'s draft board looked less like a plan and more like a dartboard that got lucky a few times.",
     ],
     "C+": [
         "{team} took some genuinely questionable swings but somehow it didn't fully implode. Bold strategy.",
+        "{team} drafted with the confidence of someone who definitely did not check the ADP chart even once.",
     ],
     "C": [
         "{team} drafted like they were filling out a scantron sheet and just started bubbling in C for every question.",
+        "{team}'s draft is the definition of \"fine, I guess\" — nothing broke, nothing sang.",
+        "If {team}'s draft were a restaurant review it would say \"food arrived, was food, three stars.\"",
     ],
     "C-": [
         "{team} reached so often this draft should come with a warning label about overexertion.",
+        "{team} spent the whole draft one round ahead of value and never once noticed.",
     ],
     "D": [
         "{team} didn't draft a fantasy team so much as assemble a cautionary tale for next year's rookies.",
         "Somewhere, an ADP chart is filing a restraining order against {team}.",
+        "{team}'s draft board should be studied, not for what to do, but as a museum exhibit of what not to.",
+        "If this draft were a fire, {team} would be standing next to it holding the gasoline, confused about the smoke.",
     ],
 }
 ROAST_DEFAULT_OPENERS = ROAST_OPENERS["C"]
@@ -518,18 +536,26 @@ ROAST_STEAL_LINES = [
     "Grabbing {name} in Round {round} was either genius or the rest of the league fell asleep at the wheel — either way, {name}'s a walking receipt now.",
     "{name} in Round {round} is the one pick this team will bring up unprompted at every league gathering until 2031.",
     "Somehow {name} fell to Round {round} and this team just quietly pocketed the free value like nothing happened.",
+    "{name} lasting until Round {round} is the kind of mistake the rest of the league makes once and thinks about forever.",
+    "There's a non-zero chance {name} in Round {round} single-handedly wins this team a trade negotiation before Week 1 even kicks off.",
+    "Round {round}'s {name} pick is the receipt this team is going to frame.",
 ]
 
 ROAST_REACH_LINES = [
     "Taking {name} in Round {round} wasn't a reach, it was a full-extension diving catch for a ball that was never thrown.",
     "{name} in Round {round}? The rest of the league collectively muted their mics so nobody would laugh out loud.",
     "History will remember Round {round}'s {name} pick the way it remembers other great unforced errors.",
+    "{name} in Round {round} is the pick that gets brought up every single time this team complains about bad luck this season.",
+    "Somebody panic-drafted {name} in Round {round} like the board was on fire, and technically, now it is.",
+    "There was no defense for taking {name} in Round {round}, and yet, here we are, admiring the crime scene.",
 ]
 
 ROAST_WEAK_POS_LINES = [
     "The {pos} room graded out at a {grade}, which is a nice way of saying it needs a moment of silence.",
     "Somebody's {pos} corps graded {grade} and needs to be handled with the same urgency as a grease fire.",
     "{pos} came in at a {grade} — bold of this team to punt an entire position group and just live with it.",
+    "A {grade} at {pos} isn't a weakness, it's a load-bearing crack in the whole foundation.",
+    "The {pos} spot graded {grade}, and no amount of positive self-talk is fixing that before Week 1.",
 ]
 
 # This league has zero dedicated WR slots -- 2 dedicated RB spots plus a
@@ -539,6 +565,8 @@ ROAST_WEAK_POS_LINES = [
 ROAST_WEAK_RB_LINES = [
     "The {pos} room graded {grade}, which stings extra in a league with two dedicated RB spots and nowhere to flex your way out of it.",
     "{pos} at a {grade} is rough anywhere, but in a league that hands you zero dedicated WR spots and forces two RBs into the lineup no matter what, it's a real problem.",
+    "A {grade} at {pos} is a bigger deal than it looks -- there's no WR/TE flex escape hatch for a thin backfield in this league.",
+    "This league guarantees two starting RB spots whether the RBs are good or not, and this team's {grade} says they weren't.",
 ]
 
 # Bench (6 of 14 roster spots) vs. starter value split -- new material
@@ -547,15 +575,34 @@ ROAST_BENCH_BEATS_STARTERS_LINES = [
     "The bench here graded out better than the actual starting lineup, which is either a deep, well-scouted roster or a quiet admission the wrong guys are starting.",
     "Six bench spots and somehow the pine is outperforming the lineup that's supposed to be, you know, playing — impressive value-finding, questionable lineup-setting.",
     "This team's bench could start for at least a couple other rosters in this league. Their actual starters, less so.",
+    "Whoever's riding the bench here got drafted better than whoever's starting. That's not a compliment to the starters.",
 ]
 ROAST_STARTERS_BEAT_BENCH_LINES = [
     "Every ounce of value went straight into the starting eight, and the bench is pure lottery tickets — a defensible way to build a team, just don't expect much when the injuries start.",
     "This team spent its capital where it actually counts — the starting lineup — and treated the bench like the afterthought it is.",
+    "Starters first, depth never: this roster made its priorities very clear, for better or worse.",
 ]
 
 ROAST_FLEX_RB_LINES = [
     "The W/R/T flex went to a running back, which in a league that already forces two dedicated RBs into the lineup means this team is starting three of them by choice.",
     "Handing the one fully-open flex spot to a THIRD running back is a statement — RB-heavy and proud of it.",
+    "Three running backs in the starting lineup, by choice, in a league with zero dedicated WR spots to begin with. Committed.",
+]
+
+# Roster-wide reach/steal PATTERN, not just the single biggest one -- a
+# distinct signal from bestValue/biggestReach that fires when a team's whole
+# draft (not just one pick) leaned heavily one way.
+REACH_COUNT_THRESHOLD = 3
+STEAL_COUNT_THRESHOLD = 3
+ROAST_MANY_REACHES_LINES = [
+    "This wasn't one bad pick, it was a pattern -- {count} separate reaches across the draft. At some point it's not bad luck, it's a philosophy.",
+    "{count} reaches on one roster isn't a mistake, it's a lifestyle choice.",
+    "Reaching {count} separate times means this team wasn't unlucky once, they were unlucky on purpose, repeatedly.",
+]
+ROAST_MANY_STEALS_LINES = [
+    "{count} separate steals on this roster means the rest of the league wasn't reading the board, they were reading a different board entirely.",
+    "Finding value {count} different times isn't luck, that's a system, and everyone else should be taking notes.",
+    "{count} steals deep into this draft and the rest of the league is still pretending the ADP chart wasn't sitting right there the whole time.",
 ]
 
 ROAST_CLOSERS = [
@@ -563,6 +610,9 @@ ROAST_CLOSERS = [
     "Print this page. Laminate it. Bring it to the league group chat the second things go sideways.",
     "This has been an entirely fact-based recap and any resemblance to actual draft strategy is purely coincidental.",
     "The algorithm doesn't care about your feelings. Neither will the rest of the league.",
+    "Screenshot this now. There will be a temptation later to claim this never happened.",
+    "None of this is personal. All of it is, however, extremely public.",
+    "Take it up with the ADP chart, not the messenger.",
 ]
 
 
@@ -570,7 +620,17 @@ def generate_roast(g):
     """Deterministic-per-roster roast paragraph for a team's grade page, or
     None if there's nothing gradeable to work with yet (e.g. every pick was
     K/DEF, which can't happen in practice given the roster slots, but don't
-    crash if it somehow does)."""
+    crash if it somehow does).
+
+    Deliberately deterministic per exact roster (same seed_key -> same
+    roast) so a page refresh doesn't reshuffle the recap -- see the module
+    note above. Variety across DIFFERENT rosters/teams comes from two
+    places instead: large line banks per category (5-6 options each, so two
+    teams hitting the same signal rarely get the same sentence) and pulling
+    from as many independent signals as actually apply (steal, reach,
+    weakest position, starter/bench split, flex-RB build, plus the
+    roster-wide reach/steal-count patterns below) rather than a fixed
+    three."""
     if g["avgValue"] is None:
         return None
 
@@ -601,8 +661,20 @@ def generate_roast(g):
     if g.get("flexFillPos") == "RB":
         supporting.append(rng.choice(ROAST_FLEX_RB_LINES))
 
+    valued_rows = [r for r in g["rows"] if r["value"] is not None]
+    reach_count = sum(1 for r in valued_rows if r["tag"] == "REACH")
+    steal_count = sum(1 for r in valued_rows if r["tag"] == "STEAL")
+    if reach_count >= REACH_COUNT_THRESHOLD:
+        supporting.append(rng.choice(ROAST_MANY_REACHES_LINES).format(count=reach_count))
+    if steal_count >= STEAL_COUNT_THRESHOLD:
+        supporting.append(rng.choice(ROAST_MANY_STEALS_LINES).format(count=steal_count))
+
     if supporting:
-        lines.extend(rng.sample(supporting, k=min(3, len(supporting))))
+        # Vary how many supporting lines make the cut (not always a flat 3)
+        # so roasts differ in length/density too, not just wording -- capped
+        # at what's actually available.
+        k = min(len(supporting), rng.randint(2, 4))
+        lines.extend(rng.sample(supporting, k=k))
 
     lines.append(rng.choice(ROAST_CLOSERS))
     return " ".join(lines)
