@@ -1,6 +1,6 @@
 # 2026 season positional fantasy rankings, standard/non-PPR scoring,
 # sourced from fantasyfootballcalculator.com/rankings/<pos> (fetched live,
-# refreshed 2026-08-24). Format per line: "PlayerName - TEAM" in rank order
+# refreshed 2026-08-28). Format per line: "PlayerName - TEAM" in rank order
 # (rank = line position). Defense block sourced from
 # fantasyfootballcalculator.com/rankings/defense -- all 32 teams ranked this
 # time (previously only 7 of 32, see DEF_RANKS_PARTIAL in git history).
@@ -36,13 +36,13 @@ Aaron Rodgers - PIT
 Geno Smith - NYJ
 Jacoby Brissett - ARI
 Fernando Mendoza - LV
-Tua Tagovailoa - ATL
 Deshaun Watson - CLE
-Shedeur Sanders - CLE
+Tua Tagovailoa - ATL
 Michael Penix Jr. - ATL
+Shedeur Sanders - CLE
 Kirk Cousins - LV
-J.J. McCarthy - MIN
 Taylen Green - CLE
+J.J. McCarthy - MIN
 Spencer Rattler - NO
 Mason Rudolph - PIT
 Carson Beck - ARI
@@ -123,11 +123,11 @@ Christian McCaffrey - SF
 James Cook III - BUF
 De'Von Achane - MIA
 Saquon Barkley - PHI
-Ashton Jeanty - LV
 Chase Brown - CIN
 Josh Jacobs - GB
 Kyren Williams - LAR
 Kenneth Walker - KC
+Ashton Jeanty - LV
 Omarion Hampton - LAC
 Javonte Williams - DAL
 Jeremiyah Love - ARI
@@ -168,64 +168,63 @@ Brian Robinson - ATL
 Tank Bigsby - PHI
 Justice Hill - BAL
 Samaje Perine - CIN
+Mike Washington Jr. - LV
 Dylan Sampson - CLE
 Braelon Allen - NYJ
 Ty Johnson - BUF
 Malik Davis - DAL
-Mike Washington Jr. - LV
 AJ Dillon - CAR
 Keaton Mitchell - LAC
 Kaelon Black - SF
 James Conner - ARI
+Jonah Coleman - DEN
 Emari Demercado - KC
 Jordan James - SF
 Kimani Vidal - LAC
 MarShawn Lloyd - GB
-Jonah Coleman - DEN
 Jaylen Wright - MIA
 Najee Harris - NYG
 Ray Davis - BUF
 Adam Randall - BAL
+Devin Singletary - NYG
 Sean Tucker - TB
 Jaydon Blue - DAL
 Chris Brooks - GB
 Emanuel Wilson - SEA
-Devin Singletary - NYG
-Isaiah Davis - NYJ
 Emmett Johnson - KC
+Isaiah Davis - NYJ
 Jawhar Jordan - HOU
 Brashard Smith - KC
-Ollie Gordon II - MIA
 George Holani - SEA
 Kyle Juszczyk - SF
+Ollie Gordon II - MIA
 Devin Neal - NO
 Jeremy McNichols - WAS
 LeQuint Allen Jr. - JAX
 J'Mari Taylor - JAX
-Ty Chandler - NO
 Raheim Sanders - CLE
 DJ Giddens - IND
 Brittain Brown - CHI
 Jam Miller - NE
-Audric Estimé - NO
-Jarquez Hunter - LAR
+Salvon Ahmed - CHI
 Roschon Johnson - CHI
-Isaac Guerendo - SF
 Frank Gore Jr. - BUF
-Kaytron Allen - WAS
+Deuce Vaughn - HOU
+Isaac Guerendo - SF
+Carlos Washington Jr. - MIA
 Phil Mafah - DAL
+Kaytron Allen - WAS
 Kendre Miller - NO
 Seth McGowan - IND
 Trayveon Williams - DET
-Hunter Luepke - DAL
 Will Shipley - PHI
+Hunter Luepke - DAL
 Demond Claiborne - MIN
 Connor Heyward - LV
 Dameon Pierce - PHI
 Jaret Patterson - LAC
 Nathan Carter - ATL
 Riley Nowakowski - PIT
-Trey Benson - ARI
 Tahj Brooks - CIN
 Zavier Scott - MIN
 Andrew Beck - NYJ
@@ -245,6 +244,7 @@ Alec Ingold - LAC
 Damien Martinez - GB
 Max Bredeson - MIN
 British Brooks - HOU
+Reggie Gilliam - NE
 """
 
 WR_RANKS = """
@@ -256,17 +256,17 @@ Drake London - ATL
 CeeDee Lamb - DAL
 Rashee Rice - KC
 Justin Jefferson - MIN
-Nico Collins - HOU
 George Pickens - DAL
 A.J. Brown - NE
+Nico Collins - HOU
 Chris Olave - NO
 Zay Flowers - BAL
 Malik Nabers - NYG
 Tetairoa McMillan - CAR
 Jameson Williams - DET
+Tee Higgins - CIN
 Emeka Egbuka - TB
 Davante Adams - LAR
-Tee Higgins - CIN
 Garrett Wilson - NYJ
 DeVonta Smith - PHI
 Terry McLaurin - WAS
@@ -293,10 +293,10 @@ Jayden Reed - GB
 Xavier Worthy - KC
 Michael Pittman Jr. - PIT
 Deebo Samuel Sr. - SF
+Romeo Doubs - NE
 Matthew Golden - GB
 Stefon Diggs - WAS
 Josh Downs - IND
-Romeo Doubs - NE
 Wan'Dale Robinson - TEN
 Makai Lemon - PHI
 Rashid Shaheed - SEA
@@ -311,8 +311,8 @@ Calvin Ridley - TEN
 De'Zhaun Stribling - SF
 Jauan Jennings - MIN
 Denzel Boston - CLE
-Jalen Nailor - LV
 Keenan Allen - IND
+Jalen Nailor - LV
 Malik Washington - MIA
 Cooper Kupp - SEA
 Tank Dell - HOU
@@ -320,49 +320,47 @@ Adonai Mitchell - NYJ
 Bub Means - NO
 Devaughn Vele - NO
 Jordyn Tyson - NO
-Kayshon Boutte - NE
+Kayshon Boutte - HOU
 Darius Slayton - NYG
 Ja'Kobi Lane - BAL
 Travis Hunter - JAX
 Tyquan Thornton - KC
+Ryan Flournoy - DAL
 Xavier Hutchinson - HOU
 Jaylin Noel - HOU
-Ryan Flournoy - DAL
-Isaac TeSlaa - DET
 Troy Franklin - DEN
+Isaac TeSlaa - DET
 Germie Bernard - PIT
 Xavier Legette - CAR
-Dontayvion Wicks - PHI
 Caleb Douglas - MIA
+Dontayvion Wicks - PHI
 Tre' Harris - LAC
 Antonio Williams - WAS
-Jalen Tolbert - MIA
 Tory Horton - SEA
+Jalen Tolbert - MIA
 Omar Cooper Jr. - NYJ
-Malik Benson - LV
 Andrei Iosivas - CIN
+Malik Benson - LV
 Elic Ayomanor - TEN
 Keon Coleman - BUF
 KaVontae Turpin - DAL
 Pat Bryant - DEN
 Chimere Dike - TEN
-Marvin Mims Jr. - DEN
 Chris Bell - MIA
 Ted Hurst III - TB
+Marvin Mims Jr. - DEN
 Jahan Dotson - ATL
 DeMario Douglas - NE
 Christian Kirk - SF
 Brandon Aiyuk - SF
 Darnell Mooney - NYG
 Ashton Dulin - IND
-Olamide Zaccheaus - ATL
 Jack Bech - LV
 Joshua Palmer - BUF
+Demarcus Robinson - SF
 Hollywood Brown - PHI
 Luke McCaffrey - WAS
-Calvin Austin III - NYG
-Demarcus Robinson - SF
-Cedric Tillman - CLE
+Cedric Tillman - FA
 Kendrick Bourne - ARI
 Zachariah Branch - ATL
 Kalif Raymond - CHI
@@ -370,9 +368,11 @@ Savion Williams - GB
 Mack Hollins - NE
 Dyami Brown - WAS
 Malachi Fields - NYG
-Tutu Atwell - MIA
+Tutu Atwell - LAR
 Jahdae Walker - CHI
 Devontez Walker - BAL
+Calvin Austin III - NYG
+Olamide Zaccheaus - ATL
 Cyrus Allen - KC
 Zavion Thomas - CHI
 Isaiah Williams - NYJ
@@ -388,9 +388,9 @@ Tyler Warren - IND
 Dallas Goedert - PHI
 Harold Fannin Jr. - CLE
 Tucker Kraft - GB
-Kyle Pitts Sr. - ATL
 Mark Andrews - BAL
 George Kittle - SF
+Kyle Pitts Sr. - ATL
 Sam LaPorta - DET
 Travis Kelce - KC
 Isaiah Likely - NYG
@@ -416,20 +416,20 @@ Darren Waller - CAR
 Gunnar Helm - TEN
 Evan Engram - DEN
 Mason Taylor - NYJ
-Theo Johnson - NYG
 Dawson Knox - BUF
+Theo Johnson - NYG
 Michael Mayer - LV
 Tyler Higbee - LAR
+Jake Tonges - SF
 Cole Kmet - CHI
 Darnell Washington - PIT
 Noah Fant - NO
-Jake Tonges - SF
 Josh Oliver - MIN
 Tommy Tremble - CAR
-Elijah Arroyo - SEA
-Austin Hooper - ATL
 Noah Gray - KC
+Elijah Arroyo - SEA
 Charlie Kolar - LAC
+Austin Hooper - ATL
 Erick All Jr. - CIN
 Daniel Bellinger - TEN
 Brock Wright - DET
@@ -438,78 +438,78 @@ Eli Raridon - NE
 Adam Trautman - DEN
 Eli Stowers - PHI
 Luke Musgrave - GB
-Davis Allen - LAR
 Elijah Higgins - ARI
+Davis Allen - LAR
 Ja'Tavion Sanders - CAR
 Nate Boerkircher - JAX
 Mitchell Evans - CAR
+Drew Sample - CIN
 Jackson Hawes - BUF
 John Bates - WAS
 Nick Vannett - SEA
 Jeremy Ruckert - NYJ
 Grant Calcaterra - PHI
-Drew Sample - CIN
 Ben Sinnott - WAS
 Ben Sims - MIA
-Marlin Klein - HOU
-Cade Stover - HOU
 Michael Trigg - DAL
+Cade Stover - HOU
+Marlin Klein - HOU
 Zack Kuntz - DAL
 Luke Schoonmaker - DAL
 Jack Endries - CIN
+Hayden Rucci - SF
 Tanner Hudson - CIN
 John Michael Gyllenborg - KC
-Bauer Sharp - TB
+Tanner Conner - NYG
 Foster Moreau - HOU
-Teagan Quitoriano - ARI
-Rivaldo Fairweather - ARI
-Zaire Mitchell-Paden - NO
 Mo Alie-Cox - IND
-Thomas Fidone II - NYG
 Cam Grandy - CIN
+Jaheim Bell - PIT
+Seydou Traore - MIA
 Nate Adkins - DEN
 Durham Smythe - BAL
-Charlie Woerner - ATL
 Payne Durham - TB
 Hunter Long - JAX
+Charlie Woerner - ATL
 Devin Culp - TB
 Will Mallory - IND
 Brevyn Spann-Ford - DAL
 Keleki Latu - BUF
+Oscar Delp - NO
 Luke Farrell - SF
 Blake Whiteheart - CLE
-Lucas Krull - DEN
-Oscar Delp - NO
-Drew Ogletree - IND
+Dallen Bentley - DEN
+Drake Dabney - GB
 Max Klare - LAR
+Drew Ogletree - IND
 James Mitchell - CAR
 Josh Whyle - GB
 Tyler Conklin - DET
+Tanner Koziol - JAX
 Sam Roush - CHI
-Tip Reiman - ARI
 Ian Thomas - LV
-Matt Hibner - BAL
-Dallen Bentley - DEN
-Chris Manhertz - NYG
-Jared Wiley - KC
-Joe Royer - CLE
 Justin Joly - DEN
+Matt Hibner - BAL
+Jared Wiley - KC
+Lucas Krull - DEN
+Tip Reiman - ARI
+Josh Cuevas - BAL
+Joe Royer - CLE
+Chris Manhertz - NYG
 CJ Dippre - NE
 Ko Kieft - TB
-Josh Cuevas - BAL
 Eric Saubert - SEA
-Tanner Koziol - JAX
 Johnny Mundt - PHI
 Moliki Matavao - NO
 Cameron Latu - PHI
 Shane Zylstra - BUF
 Jelani Woods - NYJ
 Stone Smartt - PHI
-Cole Turner - MIA
+Teagan Quitoriano - ARI
 Jack Stoll - CLE
+Zaire Mitchell-Paden - NO
 Ben Yurosek - MIN
 Nikola Kalinic - CHI
-Tanner Conner - NYG
 Kylen Granson - TEN
 """
 
@@ -529,7 +529,6 @@ Will Reichard - MIN
 Harrison Butker - KC
 Cairo Santos - CHI
 Eddy Piñeiro - SF
-Nick Folk - ATL
 Evan McPherson - CIN
 Andy Borregales - NE
 Jake Elliott - PHI
@@ -537,6 +536,7 @@ Tyler Bass - BUF
 Chris Boswell - PIT
 Trey Smack - GB
 Charlie Smyth - NO
+Nick Folk - ATL
 Chad Ryland - ARI
 Drew Stevens - WAS
 Joey Slye - TEN
@@ -546,8 +546,8 @@ Jason Sanders - NYJ
 Matt Gay - LV
 Andre Szmyt - CLE
 Ben Sauls - NYG
+Daniel Carlson - NO
 Dominic Zvada - NYG
-Cade York - NYJ
 Spencer Shrader - IND
 Tanner Brown - NO
 """
@@ -565,12 +565,12 @@ Pittsburgh Steelers
 New England Patriots
 Los Angeles Chargers
 Philadelphia Eagles
+Atlanta Falcons
 Cleveland Browns
 Jacksonville Jaguars
 Buffalo Bills
 Tennessee Titans
 New Orleans Saints
-Atlanta Falcons
 Cincinnati Bengals
 Baltimore Ravens
 Washington Commanders
