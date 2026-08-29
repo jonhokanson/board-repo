@@ -36,17 +36,6 @@
   .sub { color: var(--text-dim); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
   .sub strong { color: var(--text); font-weight: 600; }
 
-  .countdown {
-    display: flex; justify-content: center; gap: 10px; margin-bottom: 32px;
-  }
-  .countdown .cell {
-    background: var(--panel-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; min-width: 64px;
-  }
-  .countdown .num { font-size: 1.6rem; font-weight: 800; color: var(--accent); line-height: 1; }
-  .countdown .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
-
   .qr-card {
     display: flex; align-items: center; gap: 16px; justify-content: center;
     margin-top: 20px; margin-bottom: 28px; padding: 14px 18px; background: var(--panel-glass);
@@ -60,7 +49,7 @@
   .side-photo {
     position: fixed; top: 0; bottom: 0;
     /* Deliberately wide enough to reach under the content column, not just
-       fill the margins beside it -- the cards/countdown/QR card above use
+       fill the margins beside it -- the cards/QR card above use
        translucent "glass" backgrounds (--panel-glass) so the photos show
        through them rather than being fully hidden. Still scales down on
        narrower screens so it never overwhelms the text. */
@@ -136,13 +125,6 @@
   <h1>🏈 2026 Draft</h1>
   <div class="sub"><strong>Saturday, August 29, 2026 &middot; 6:00 PM CT</strong></div>
 
-  <div class="countdown" id="countdown">
-    <div class="cell"><div class="num" id="cd-days">--</div><div class="label">Days</div></div>
-    <div class="cell"><div class="num" id="cd-hours">--</div><div class="label">Hours</div></div>
-    <div class="cell"><div class="num" id="cd-mins">--</div><div class="label">Min</div></div>
-    <div class="cell"><div class="num" id="cd-secs">--</div><div class="label">Sec</div></div>
-  </div>
-
   <div class="links">
     <a class="card" href="/board/draft-board.html">
       <div class="icon">📋</div>
@@ -193,39 +175,11 @@
     <div style="margin-top:14px;">
       <a class="tag tag-link" href="/entry" target="_blank" rel="noopener noreferrer">Pick Entry</a>
     </div>
-    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.11.1</div>
+    <div style="font-size:11px; color:#93a4b3; opacity:0.5; margin-top:14px;">TBML Draft Tool &middot; v0.2.11.2</div>
   </footer>
 </div>
 
 <script>
-const DRAFT_DATE = new Date('2026-08-29T18:00:00-05:00').getTime(); // 6:00pm Central (CDT, UTC-5 in August)
-
-function tick() {
-  const now = new Date().getTime();
-  const diff = DRAFT_DATE - now;
-  const els = {
-    days: document.getElementById('cd-days'),
-    hours: document.getElementById('cd-hours'),
-    mins: document.getElementById('cd-mins'),
-    secs: document.getElementById('cd-secs'),
-  };
-  if (diff <= 0) {
-    document.getElementById('countdown').style.display = 'none';
-    clearInterval(timer);
-    return;
-  }
-  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const m = Math.floor((diff / (1000 * 60)) % 60);
-  const s = Math.floor((diff / 1000) % 60);
-  els.days.textContent = d;
-  els.hours.textContent = String(h).padStart(2, '0');
-  els.mins.textContent = String(m).padStart(2, '0');
-  els.secs.textContent = String(s).padStart(2, '0');
-}
-tick();
-const timer = setInterval(tick, 1000);
-
 // Crossfade through the trophy photos on the right-hand side.
 const trophyPhotos = document.querySelectorAll('#trophy-cycle img');
 if (trophyPhotos.length > 1) {
