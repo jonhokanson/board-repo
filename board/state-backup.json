@@ -157,7 +157,11 @@
       "guaranteed": null
     },
     "I Know What I Did": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Drake London",
+        "pos": "WR",
+        "nflTeam": "Atlanta Falcons"
+      }
     },
     "Old No 7": {
       "guaranteed": {
@@ -178,6 +182,12 @@
       "round": 1,
       "team": "Murphy's Law",
       "name": "Amon-Ra St. Brown",
+      "pos": "WR"
+    },
+    {
+      "round": 1,
+      "team": "Those Bastards",
+      "name": "Puka Nacua",
       "pos": "WR"
     }
   ]
