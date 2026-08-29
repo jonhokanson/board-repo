@@ -152,7 +152,11 @@
       }
     },
     "Below Me": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "De'Von Achane",
+        "pos": "RB",
+        "nflTeam": "Miami Dolphins"
+      }
     },
     "Hairy Beavers": {
       "guaranteed": {
@@ -208,6 +212,12 @@
       "round": 1,
       "team": "Easy Money",
       "name": "Kenneth Walker",
+      "pos": "RB"
+    },
+    {
+      "round": 1,
+      "team": "Below Me",
+      "name": "Ashton Jeanty",
       "pos": "RB"
     }
   ]
