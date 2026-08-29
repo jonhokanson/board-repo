@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.11.2"
+APP_VERSION = "0.2.11.3"
 
 # This season's draft year -- used to work out "reigning champion" / "last
 # season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and
@@ -1216,6 +1216,15 @@ def render_available_players(pool, derived):
         "posColors": POS_COLORS,
         "yahooIds": YAHOO_IDS,
     })
+    # Position slicer for the Overall Ranking tab -- lets Jon filter that
+    # table down to e.g. just RBs instead of scrolling the full ranked list.
+    # "All" plus one button per POS_ORDER entry; active-state colors are
+    # applied in JS from DATA.posColors so this never drifts from the
+    # By-Position tab's own badge colors.
+    pos_filter_buttons = ['<button class="pos-filter-btn" data-pos="ALL">All</button>']
+    for pos in POS_ORDER:
+        pos_filter_buttons.append(f'<button class="pos-filter-btn" data-pos="{pos}">{pos}</button>')
+    pos_filter_html = "\n      ".join(pos_filter_buttons)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1271,6 +1280,10 @@ def render_available_players(pool, derived):
   .toggle-all {{ font-size:12px; color:var(--accent); background:none; border:1px solid var(--accent); border-radius:6px; padding:4px 10px; cursor:pointer; margin-left:10px; }}
   .hide-toggle {{ font-size:12px; color:var(--text-dim); background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; margin-bottom:14px; }}
   .hide-toggle.active {{ color:var(--protect); border-color:var(--protect); background:rgba(245,166,35,0.1); }}
+  .pos-filter-row {{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }}
+  .pos-filter-btn {{ font-size:12px; font-weight:700; color:var(--text-dim); background:none; border:1px solid var(--border); border-radius:6px; padding:4px 11px; cursor:pointer; }}
+  .pos-filter-btn.active {{ color:#0b0f14; border-color:transparent; }}
+  .pos-filter-btn.active[data-pos="ALL"] {{ color:#fff; background:var(--accent); }}
   .tabs {{ display:flex; align-items:center; gap:8px; margin:14px 0 18px; }}
   .tab-btn {{ font-size:13px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 16px; cursor:pointer; }}
   .tab-btn.active {{ color:var(--accent); border-color:var(--accent); background:var(--accent-bg,rgba(59,167,255,0.1)); }}
@@ -1347,6 +1360,9 @@ def render_available_players(pool, derived):
   <div class="tab-panel" id="panelOverall">
     <br>
     <button class="hide-toggle" id="hideToggleOverall">Hide unavailable</button>
+    <div class="pos-filter-row" id="posFilterRow">
+      {pos_filter_html}
+    </div>
     <table class="overall-table">
       <thead><tr><th>Ovr</th><th>Player</th><th>Pos</th><th>Team</th><th>Status</th></tr></thead>
       <tbody id="overallBody"></tbody>
@@ -1755,6 +1771,7 @@ function renderOverall(filterText) {{
   const ranked = DATA.pool
     .filter(p => !f || p.name.toLowerCase().includes(f) || p.nflTeam.toLowerCase().includes(f))
     .filter(p => !hideUnavailable || p.status === 'available')
+    .filter(p => posFilter === 'ALL' || p.pos === posFilter)
     .slice()
     .sort((a, b) => {{
       const ar = a.overallRank == null ? Infinity : a.overallRank;
@@ -1788,16 +1805,33 @@ function renderActiveTab() {{
 }}
 
 // Auto-refresh reloads the whole page, which would normally reset which tab
-// you're on and whether "hide unavailable" is active. To survive that, both
-// get stashed in the URL hash (not localStorage -- keeps this a plain static
+// you're on, whether "hide unavailable" is active, and (new) which position
+// the Overall Ranking tab is filtered to. To survive that, all three get
+// stashed in the URL hash (not localStorage -- keeps this a plain static
 // file with no storage APIs) and restored on load instead of defaulting.
 const hashParams = new URLSearchParams(location.hash.slice(1));
 let activeTab = hashParams.get('tab') === 'overall' ? 'overall' : 'byPos';
 let hideUnavailable = hashParams.get('hide') === '1';
+const hashPos = hashParams.get('pos');
+let posFilter = (hashPos && (hashPos === 'ALL' || DATA.posOrder.includes(hashPos))) ? hashPos : 'ALL';
 
 function syncHash() {{
-  history.replaceState(null, '', '#tab=' + activeTab + '&hide=' + (hideUnavailable ? '1' : '0'));
+  history.replaceState(null, '', '#tab=' + activeTab + '&hide=' + (hideUnavailable ? '1' : '0') + '&pos=' + posFilter);
 }}
+
+function setPosFilter(pos) {{
+  posFilter = pos;
+  document.querySelectorAll('.pos-filter-btn').forEach(btn => {{
+    const isActive = btn.dataset.pos === pos;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive && pos !== 'ALL' ? DATA.posColors[pos] : '';
+  }});
+  syncHash();
+  renderActiveTab();
+}}
+document.querySelectorAll('.pos-filter-btn').forEach(btn => {{
+  btn.addEventListener('click', () => setPosFilter(btn.dataset.pos));
+}});
 
 document.getElementById('search').addEventListener('input', renderActiveTab);
 
@@ -1840,8 +1874,10 @@ function setTab(tab) {{
 document.getElementById('tabBtnByPos').addEventListener('click', () => setTab('byPos'));
 document.getElementById('tabBtnOverall').addEventListener('click', () => setTab('overall'));
 
-// Apply whatever tab/hide state was restored from the hash (or the defaults)
-// before the first render, so a reload lands back where you left off.
+// Apply whatever tab/hide/pos-filter state was restored from the hash (or
+// the defaults) before the first render, so a reload lands back where you
+// left off.
+setPosFilter(posFilter);
 setHideUnavailable(hideUnavailable);
 setTab(activeTab);
 
