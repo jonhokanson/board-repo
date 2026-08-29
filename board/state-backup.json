@@ -136,7 +136,11 @@
       }
     },
     "Murphy's Law": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Marvin Harrison Jr.",
+        "pos": "WR",
+        "nflTeam": "Arizona Cardinals"
+      }
     },
     "Those Bastards": {
       "guaranteed": {
@@ -241,6 +245,12 @@
       "team": "I Know What I Did",
       "name": "Drake Maye",
       "pos": "QB"
+    },
+    {
+      "round": 1,
+      "team": "Old No 7",
+      "name": "Kyren Williams",
+      "pos": "RB"
     }
   ]
 }
