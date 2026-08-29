@@ -129,7 +129,11 @@
   },
   "protectResolution": {
     "Chili Dogs": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Malik Nabers",
+        "pos": "WR",
+        "nflTeam": "New York Giants"
+      }
     },
     "Murphy's Law": {
       "guaranteed": null
@@ -159,5 +163,12 @@
       "guaranteed": null
     }
   },
-  "picks": []
+  "picks": [
+    {
+      "round": 1,
+      "team": "Chili Dogs",
+      "name": "Bijan Robinson",
+      "pos": "RB"
+    }
+  ]
 }
