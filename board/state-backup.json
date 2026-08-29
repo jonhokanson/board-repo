@@ -139,7 +139,11 @@
       "guaranteed": null
     },
     "Those Bastards": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Nico Collins",
+        "pos": "WR",
+        "nflTeam": "Houston Texans"
+      }
     },
     "Just The Tip": {
       "guaranteed": null
@@ -224,6 +228,12 @@
       "round": 1,
       "team": "Hairy Beavers",
       "name": "Breece Hall",
+      "pos": "RB"
+    },
+    {
+      "round": 1,
+      "team": "IT Militia",
+      "name": "Omarion Hampton",
       "pos": "RB"
     }
   ]
