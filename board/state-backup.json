@@ -151,7 +151,11 @@
       "guaranteed": null
     },
     "Hairy Beavers": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "CeeDee Lamb",
+        "pos": "WR",
+        "nflTeam": "Dallas Cowboys"
+      }
     },
     "IT Militia": {
       "guaranteed": null
@@ -188,6 +192,12 @@
       "round": 1,
       "team": "Those Bastards",
       "name": "Puka Nacua",
+      "pos": "WR"
+    },
+    {
+      "round": 1,
+      "team": "Just The Tip",
+      "name": "Jaxon Smith-Njigba",
       "pos": "WR"
     }
   ]
