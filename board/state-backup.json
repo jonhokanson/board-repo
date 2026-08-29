@@ -160,7 +160,11 @@
       "guaranteed": null
     },
     "Old No 7": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "A.J. Brown",
+        "pos": "WR",
+        "nflTeam": "New England Patriots"
+      }
     }
   },
   "picks": [
@@ -169,6 +173,12 @@
       "team": "Chili Dogs",
       "name": "Bijan Robinson",
       "pos": "RB"
+    },
+    {
+      "round": 1,
+      "team": "Murphy's Law",
+      "name": "Amon-Ra St. Brown",
+      "pos": "WR"
     }
   ]
 }
