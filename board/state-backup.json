@@ -145,7 +145,11 @@
       "guaranteed": null
     },
     "Easy Money": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Justin Jefferson",
+        "pos": "WR",
+        "nflTeam": "Minnesota Vikings"
+      }
     },
     "Below Me": {
       "guaranteed": null
@@ -199,6 +203,12 @@
       "team": "Just The Tip",
       "name": "Jaxon Smith-Njigba",
       "pos": "WR"
+    },
+    {
+      "round": 1,
+      "team": "Easy Money",
+      "name": "Kenneth Walker",
+      "pos": "RB"
     }
   ]
 }
