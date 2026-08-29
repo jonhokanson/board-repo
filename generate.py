@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.11.3"
+APP_VERSION = "0.2.11.4"
 
 # This season's draft year -- used to work out "reigning champion" / "last
 # season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and

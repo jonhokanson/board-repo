@@ -247,6 +247,15 @@ British Brooks - HOU
 Reggie Gilliam - NE
 """
 
+# The final 237 entries (after "Treylon Burks - WAS") were added 2026-08-29,
+# mid-draft-day, extending WR coverage beyond fantasyfootballcalculator.com's
+# fantasy-relevant top-130 to every rosterable WR across all 32 teams
+# (rookies, camp-body depth, recent trades/signings). Added at Jon's request
+# after he noticed Barion Brown (NO, a 2026 6th-round rookie) was missing.
+# Sourced via web research (team roster pages), not ADP -- these get
+# sequential ranks (WR131+) purely as a side effect of parse_ranked_block()'s
+# enumerate(); that is NOT a scouted/ordered rank, just "comes after the real
+# rankings." Don't be surprised these ranks don't mean anything meaningful.
 WR_RANKS = """
 Puka Nacua - LAR
 Ja'Marr Chase - CIN
@@ -378,6 +387,243 @@ Zavion Thomas - CHI
 Isaiah Williams - NYJ
 Isaiah Bond - CLE
 Treylon Burks - WAS
+Jalen Brooks - ARI
+Devin Duvernay - ARI
+Simi Fehoko - ARI
+Ihmir Smith-Marsette - ARI
+Reggie Virgil - ARI
+Harrison Wallace III - ARI
+Vinny Anthony II - ATL
+Beaux Collins - ATL
+Dylan Drummond - ATL
+Keelan Marion - ATL
+Antwane Wells Jr. - ATL
+Xavier Guillory - BAL
+Cornelius Johnson - BAL
+Chris Moore - BAL
+Elijah Sarratt - BAL
+Octavian Smith - BAL
+Dayton Wade - BAL
+LaJohntay Wester - BAL
+Skyler Bell - BUF
+Stephen Gosnell - BUF
+Mecole Hardman - BUF
+Ja'Mori Maclin - BUF
+Dante Pettis - BUF
+Trent Sherfield - BUF
+Quentin Skinner - BUF
+Max Tomczak - BUF
+Elijah Cooks - CAR
+Jimmy Horn Jr. - CAR
+John Metchie III - CAR
+David Moore - CAR
+Ja'Seem Reed - CAR
+Brycen Tremayne - CAR
+Casey Washington - CAR
+Maurice Alexander - CHI
+Kaden Davis - CHI
+Omari Kelly - CHI
+Ray-Ray McCloud - CHI
+Scott Miller - CHI
+JP Richardson - CHI
+Xavier Johnson - CIN
+Charlie Jones - CIN
+Dohnte Meyers - CIN
+Jordan Moore - CIN
+Kendric Pryor - CIN
+Noah Thomas - CIN
+Mitchell Tinsley - CIN
+Ke'Shawn Williams - CIN
+Colbie Young - CIN
+Malachi Corley - CLE
+Luke Floriea - CLE
+Gage Larvadain - CLE
+Tylan Wallace - CLE
+Kole Wilson - CLE
+Camden Brown - DAL
+Jordan Hudson - DAL
+Tyler Johnson - DAL
+Denzel Mims - DAL
+Jonathan Mingo - DAL
+Anthony Smith - DAL
+Jaden Smith - DAL
+Marquez Valdes-Scantling - DAL
+Michael Bandy - DEN
+Lil'Jordan Humphrey - DEN
+Kolbe Katsis - DEN
+Dane Key - DEN
+Joseph Manjack - DEN
+Cameron Ross - DEN
+Kyrese Rowan - DEN
+Tarik Black - DET
+Malik Cunningham - DET
+Greg Dortch - DET
+Lucky Jackson - DET
+Tom Kennedy - DET
+Dominic Lovett - DET
+Tay Martin - DET
+Jackson Meeks - DET
+Chris Hilton Jr. - GB
+Kisean Johnson - GB
+Bo Melton - GB
+Skyy Moore - GB
+Isaiah Neyor - GB
+Kaden Prather - GB
+Will Sheppard - GB
+J. Michael Sturdivant - GB
+Lewis Bond - HOU
+Josh Kelly - HOU
+Zay Jones - HOU
+Treyvhon Saunders - HOU
+Sterling Shepard - HOU
+Justin Watson - HOU
+Jared Wayne - HOU
+Deion Burks - IND
+Anthony Gould - IND
+Sahmir Hagans - IND
+D.J. Montgomery - IND
+Ben Nikkel - IND
+Coleman Owen - IND
+Eli Pancol - IND
+Raylen Sharpe - IND
+Laquon Treadwell - IND
+Nick Westbrook-Ikhine - IND
+Brady Boyd - JAX
+Chandler Brayboy - JAX
+Josh Cameron - JAX
+Tim Jones - JAX
+Trebor Pena - JAX
+Austin Trammell - JAX
+C.J. Williams - JAX
+Michael Wortham - JAX
+Andrew Armstrong - KC
+Jacob De Jesus - KC
+Omari Evans - KC
+Jimmy Holiday - KC
+Xavier Loyd - KC
+Nikko Remigio - KC
+Jalen Royals - KC
+Jeff Weimer - KC
+Sincere Brown - LAC
+Dalevon Campbell - LAC
+Liam Clifford - LAC
+Derius Davis - LAC
+Gary Jennings - LAC
+JaQuae Jackson - LAC
+KeAndre Lambert-Smith - LAC
+Devonte Ross - LAC
+Brenen Thompson - LAC
+Alex Bachman - LAR
+CJ Daniels - LAR
+Tru Edwards - LAR
+Konata Mumpfield - LAR
+Brennan Presley - LAR
+Tyler Scott - LAR
+Xavier Smith - LAR
+Jordan Whittington - LAR
+Phillip Dorsett - LV
+Brandon Johnson - LV
+Shedrick Jackson - LV
+Chase Roberts - LV
+Deven Thompkins - LV
+Dont'e Thornton Jr. - LV
+Dareke Young - LV
+E.J. Williams Jr. - LV
+Kevin Coleman Jr. - MIA
+A.J. Henning - MIA
+Ryan Miller - MIA
+Donaven McCulley - MIA
+Terrace Marshall Jr. - MIA
+Jalen Reagor - MIA
+Theo Wease Jr. - MIA
+Dillon Bell - MIN
+Michael Briscoe - MIN
+Terrill Davis - MIN
+Tai Felton - MIN
+Dontae Fleming - MIN
+Jeshaun Jones - MIN
+Myles Price - MIN
+Trayvon Rudolph - MIN
+Marcus Sanders Jr. - MIN
+Efton Chism III - NE
+Nick DeGennaro - NE
+Cameron Dorner - NE
+Tejhaun Palmer - NE
+Kyle Williams - NE
+Kevin Austin Jr. - NO
+Ronnie Bell - NO
+Barion Brown - NO
+Bryce Lance - NO
+Jalen Moreno-Cropper - NO
+Trey Palmer - NO
+Brock Rechsteiner - NO
+Mason Tipton - NO
+Odell Beckham Jr. - NYG
+Braxton Berrios - NYG
+Dalen Cambre - NYG
+Xavier Gipson - NYG
+Isaiah Hodgins - NYG
+Jalin Hyatt - NYG
+Kobe Prentice - NYG
+Junior Bergen - NYJ
+Cam Camper - NYJ
+Malik McClain - NYJ
+Tim Patrick - NYJ
+Jamaal Pritchett - NYJ
+Quincy Skinner Jr. - NYJ
+Arian Smith - NYJ
+Darius Cooper - PHI
+Britain Covey - PHI
+Danny Gray - PHI
+Elijah Moore - PHI
+Samori Toure - PHI
+Tahj Washington - PHI
+Quez Watkins - PHI
+Jakobie Keeney-James - PIT
+Cornell Powell - PIT
+Ben Skowronek - PIT
+Brandon Smith - PIT
+Levi Wentz - PIT
+Kaden Wetjen - PIT
+Isaiah Winstead - PIT
+Roman Wilson - PIT
+Jake Bobo - SEA
+Irvin Charles - SEA
+Montorie Foster Jr. - SEA
+Emmanuel Henderson Jr. - SEA
+Julian Hicks - SEA
+Velus Jones Jr. - SEA
+Rashad Rochelle - SEA
+Cody White - SEA
+Ricky White III - SEA
+Jacob Cowing - SF
+Wesley Grimes - SF
+KhaDarel Hodge - SF
+Trenton Irwin - SF
+Will Pauling - SF
+Malik Turner - SF
+Jordan Watkins - SF
+Garrett Greene - TB
+Matthew Henry - TB
+Jha'Quan Jackson - TB
+Kameron Johnson - TB
+Tez Johnson - TB
+Dean Patterson IV - TB
+Eric Rivers Jr. - TB
+David Sills - TB
+Hank Beatty - TEN
+Courtney Jackson - TEN
+Mason Kinsey - TEN
+Lance McCutcheon - TEN
+Tyren Montgomery - TEN
+Bryce Oliver - TEN
+K.J. Osborn - TEN
+Xavier Restrepo - TEN
+Jaden Bradley - WAS
+Jacoby Jones - WAS
+Van Jefferson - WAS
+Jaylin Lane - WAS
+Nick Nash - WAS
 """
 
 TE_RANKS = """
