@@ -174,7 +174,11 @@
       }
     },
     "IT Militia": {
-      "guaranteed": null
+      "guaranteed": {
+        "name": "Tee Higgins",
+        "pos": "WR",
+        "nflTeam": "Cincinnati Bengals"
+      }
     },
     "I Know What I Did": {
       "guaranteed": {
@@ -263,6 +267,12 @@
       "team": "I Know What I Did",
       "name": "Javonte Williams",
       "pos": "RB"
+    },
+    {
+      "round": 2,
+      "team": "IT Militia",
+      "name": "George Pickens",
+      "pos": "WR"
     }
   ]
 }
