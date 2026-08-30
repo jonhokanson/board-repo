@@ -132,8 +132,8 @@
     },
     "Those Bastards": {
       "guaranteed": {
-        "name": "Nico Collins",
-        "pos": "WR"
+        "name": "Omarion Hampton",
+        "pos": "RB"
       }
     },
     "Just The Tip": {
@@ -195,50 +195,50 @@
     {
       "round": 1,
       "team": "Those Bastards",
-      "name": "Amon-Ra St. Brown",
-      "pos": "WR"
-    },
-    {
-      "round": 1,
-      "team": "Just The Tip",
       "name": "Jaxon Smith-Njigba",
       "pos": "WR"
     },
     {
       "round": 1,
-      "team": "Easy Money",
+      "team": "Just The Tip",
       "name": "De'Von Achane",
       "pos": "RB"
     },
     {
       "round": 1,
-      "team": "Below Me",
-      "name": "Rashee Rice",
+      "team": "Easy Money",
+      "name": "Amon-Ra St. Brown",
       "pos": "WR"
     },
     {
       "round": 1,
-      "team": "Hairy Beavers",
+      "team": "Below Me",
       "name": "Justin Jefferson",
       "pos": "WR"
     },
     {
       "round": 1,
-      "team": "IT Militia",
+      "team": "Hairy Beavers",
       "name": "George Pickens",
       "pos": "WR"
     },
     {
       "round": 1,
-      "team": "I Know What I Did",
+      "team": "IT Militia",
       "name": "Josh Jacobs",
       "pos": "RB"
     },
     {
       "round": 1,
+      "team": "I Know What I Did",
+      "name": "Rashee Rice",
+      "pos": "WR"
+    },
+    {
+      "round": 1,
       "team": "Old No 7",
-      "name": "Omarion Hampton",
-      "pos": "RB"
+      "name": "Nico Collins",
+      "pos": "WR"
     },
     {
       "round": 2,
@@ -261,38 +261,38 @@
     {
       "round": 2,
       "team": "Hairy Beavers",
-      "name": "Tetairoa McMillan",
-      "pos": "WR"
-    },
-    {
-      "round": 2,
-      "team": "Below Me",
-      "name": "Malik Nabers",
-      "pos": "WR"
-    },
-    {
-      "round": 2,
-      "team": "Easy Money",
-      "name": "Jeremiyah Love",
-      "pos": "RB"
-    },
-    {
-      "round": 2,
-      "team": "Just The Tip",
       "name": "Javonte Williams",
       "pos": "RB"
     },
     {
       "round": 2,
-      "team": "Those Bastards",
+      "team": "Below Me",
+      "name": "Jameson Williams",
+      "pos": "WR"
+    },
+    {
+      "round": 2,
+      "team": "Easy Money",
+      "name": "Tetairoa McMillan",
+      "pos": "WR"
+    },
+    {
+      "round": 2,
+      "team": "Just The Tip",
       "name": "Breece Hall",
       "pos": "RB"
     },
     {
       "round": 2,
-      "team": "Murphy's Law",
-      "name": "Jameson Williams",
+      "team": "Those Bastards",
+      "name": "Malik Nabers",
       "pos": "WR"
+    },
+    {
+      "round": 2,
+      "team": "Murphy's Law",
+      "name": "Jeremiyah Love",
+      "pos": "RB"
     },
     {
       "round": 2,
@@ -309,86 +309,86 @@
     {
       "round": 3,
       "team": "Murphy's Law",
-      "name": "Travis Etienne Jr.",
-      "pos": "RB"
-    },
-    {
-      "round": 3,
-      "team": "Those Bastards",
-      "name": "Ladd McConkey",
-      "pos": "WR"
-    },
-    {
-      "round": 3,
-      "team": "Just The Tip",
-      "name": "Davante Adams",
-      "pos": "WR"
-    },
-    {
-      "round": 3,
-      "team": "Easy Money",
       "name": "DeVonta Smith",
       "pos": "WR"
     },
     {
       "round": 3,
-      "team": "Below Me",
-      "name": "Garrett Wilson",
-      "pos": "WR"
-    },
-    {
-      "round": 3,
-      "team": "Hairy Beavers",
-      "name": "Bhayshul Tuten",
+      "team": "Those Bastards",
+      "name": "Travis Etienne Jr.",
       "pos": "RB"
     },
     {
       "round": 3,
-      "team": "IT Militia",
-      "name": "D'Andre Swift",
-      "pos": "RB"
-    },
-    {
-      "round": 3,
-      "team": "I Know What I Did",
+      "team": "Just The Tip",
       "name": "Rome Odunze",
       "pos": "WR"
     },
     {
       "round": 3,
-      "team": "Old No 7",
-      "name": "DJ Moore",
+      "team": "Easy Money",
+      "name": "Davante Adams",
       "pos": "WR"
     },
     {
-      "round": 4,
-      "team": "Old No 7",
-      "name": "Christian Watson",
+      "round": 3,
+      "team": "Below Me",
+      "name": "D'Andre Swift",
+      "pos": "RB"
+    },
+    {
+      "round": 3,
+      "team": "Hairy Beavers",
+      "name": "Garrett Wilson",
       "pos": "WR"
     },
     {
-      "round": 4,
+      "round": 3,
+      "team": "IT Militia",
+      "name": "Ladd McConkey",
+      "pos": "WR"
+    },
+    {
+      "round": 3,
       "team": "I Know What I Did",
+      "name": "Bucky Irving",
+      "pos": "RB"
+    },
+    {
+      "round": 3,
+      "team": "Old No 7",
       "name": "Quinshon Judkins",
       "pos": "RB"
     },
     {
       "round": 4,
+      "team": "Old No 7",
+      "name": "Bhayshul Tuten",
+      "pos": "RB"
+    },
+    {
+      "round": 4,
+      "team": "I Know What I Did",
+      "name": "DJ Moore",
+      "pos": "WR"
+    },
+    {
+      "round": 4,
       "team": "IT Militia",
-      "name": "Bucky Irving",
+      "name": "David Montgomery",
       "pos": "RB"
     },
     {
       "round": 4,
       "team": "Hairy Beavers",
-      "name": "Mike Evans",
+      "name": "Christian Watson",
       "pos": "WR"
     },
     {
       "round": 4,
       "team": "Below Me",
-      "name": "David Montgomery",
-      "pos": "RB"
+      "name": "Jaylen Waddle",
+      "pos": "WR"
     },
     {
       "round": 4,
@@ -399,92 +399,92 @@
     {
       "round": 4,
       "team": "Just The Tip",
+      "name": "Lamar Jackson",
+      "pos": "QB"
+    },
+    {
+      "round": 4,
+      "team": "Those Bastards",
       "name": "Alec Pierce",
       "pos": "WR"
     },
     {
       "round": 4,
-      "team": "Those Bastards",
-      "name": "Jaylen Waddle",
+      "team": "Murphy's Law",
+      "name": "Mike Evans",
       "pos": "WR"
     },
     {
       "round": 4,
-      "team": "Murphy's Law",
-      "name": "Joe Burrow",
-      "pos": "QB"
-    },
-    {
-      "round": 4,
       "team": "Chili Dogs",
-      "name": "Rhamondre Stevenson",
-      "pos": "RB"
-    },
-    {
-      "round": 5,
-      "team": "Chili Dogs",
-      "name": "Lamar Jackson",
-      "pos": "QB"
-    },
-    {
-      "round": 5,
-      "team": "Murphy's Law",
-      "name": "Luther Burden III",
-      "pos": "WR"
-    },
-    {
-      "round": 5,
-      "team": "Those Bastards",
-      "name": "DK Metcalf",
-      "pos": "WR"
-    },
-    {
-      "round": 5,
-      "team": "Just The Tip",
-      "name": "TreVeyon Henderson",
-      "pos": "RB"
-    },
-    {
-      "round": 5,
-      "team": "Easy Money",
       "name": "Courtland Sutton",
       "pos": "WR"
     },
     {
       "round": 5,
-      "team": "Below Me",
-      "name": "Parker Washington",
-      "pos": "WR"
+      "team": "Chili Dogs",
+      "name": "Joe Burrow",
+      "pos": "QB"
     },
     {
       "round": 5,
-      "team": "Hairy Beavers",
+      "team": "Murphy's Law",
+      "name": "TreVeyon Henderson",
+      "pos": "RB"
+    },
+    {
+      "round": 5,
+      "team": "Those Bastards",
       "name": "Tony Pollard",
       "pos": "RB"
     },
     {
       "round": 5,
-      "team": "IT Militia",
+      "team": "Just The Tip",
+      "name": "Luther Burden III",
+      "pos": "WR"
+    },
+    {
+      "round": 5,
+      "team": "Easy Money",
+      "name": "DK Metcalf",
+      "pos": "WR"
+    },
+    {
+      "round": 5,
+      "team": "Below Me",
+      "name": "Rhamondre Stevenson",
+      "pos": "RB"
+    },
+    {
+      "round": 5,
+      "team": "Hairy Beavers",
       "name": "Jaylen Warren",
       "pos": "RB"
     },
     {
       "round": 5,
-      "team": "I Know What I Did",
+      "team": "IT Militia",
       "name": "Dak Prescott",
       "pos": "QB"
     },
     {
       "round": 5,
+      "team": "I Know What I Did",
+      "name": "Colston Loveland",
+      "pos": "TE"
+    },
+    {
+      "round": 5,
       "team": "Old No 7",
-      "name": "Brian Thomas Jr.",
+      "name": "Parker Washington",
       "pos": "WR"
     },
     {
       "round": 6,
       "team": "Old No 7",
-      "name": "Jayden Daniels",
-      "pos": "QB"
+      "name": "Jadarian Price",
+      "pos": "RB"
     },
     {
       "round": 6,
@@ -495,55 +495,55 @@
     {
       "round": 6,
       "team": "IT Militia",
-      "name": "Jadarian Price",
-      "pos": "RB"
-    },
-    {
-      "round": 6,
-      "team": "Hairy Beavers",
-      "name": "Carnell Tate",
-      "pos": "WR"
-    },
-    {
-      "round": 6,
-      "team": "Below Me",
-      "name": "Colston Loveland",
-      "pos": "TE"
-    },
-    {
-      "round": 6,
-      "team": "Easy Money",
       "name": "J.K. Dobbins",
       "pos": "RB"
     },
     {
       "round": 6,
-      "team": "Just The Tip",
-      "name": "Michael Wilson",
+      "team": "Hairy Beavers",
+      "name": "Jayden Daniels",
+      "pos": "QB"
+    },
+    {
+      "round": 6,
+      "team": "Below Me",
+      "name": "Brian Thomas Jr.",
       "pos": "WR"
     },
     {
       "round": 6,
-      "team": "Those Bastards",
+      "team": "Easy Money",
+      "name": "Carnell Tate",
+      "pos": "WR"
+    },
+    {
+      "round": 6,
+      "team": "Just The Tip",
       "name": "Quentin Johnston",
       "pos": "WR"
     },
     {
       "round": 6,
-      "team": "Murphy's Law",
+      "team": "Those Bastards",
       "name": "Rico Dowdle",
       "pos": "RB"
     },
     {
       "round": 6,
+      "team": "Murphy's Law",
+      "name": "Tyler Warren",
+      "pos": "TE"
+    },
+    {
+      "round": 6,
       "team": "Chili Dogs",
-      "name": "Jalen Hurts",
-      "pos": "QB"
+      "name": "Chris Godwin Jr.",
+      "pos": "WR"
     },
     {
       "round": 7,
       "team": "Chili Dogs",
-      "name": "Chris Godwin Jr.",
+      "name": "Michael Wilson",
       "pos": "WR"
     },
     {
@@ -555,92 +555,92 @@
     {
       "round": 7,
       "team": "Those Bastards",
-      "name": "Tyler Warren",
-      "pos": "TE"
+      "name": "Jalen Hurts",
+      "pos": "QB"
     },
     {
       "round": 7,
       "team": "Just The Tip",
-      "name": "Jordan Addison",
-      "pos": "WR"
-    },
-    {
-      "round": 7,
-      "team": "Easy Money",
-      "name": "Seattle Seahawks",
-      "pos": "DEF"
-    },
-    {
-      "round": 7,
-      "team": "Below Me",
-      "name": "Jakobi Meyers",
-      "pos": "WR"
-    },
-    {
-      "round": 7,
-      "team": "Hairy Beavers",
       "name": "Tucker Kraft",
       "pos": "TE"
     },
     {
       "round": 7,
+      "team": "Easy Money",
+      "name": "Jordan Addison",
+      "pos": "WR"
+    },
+    {
+      "round": 7,
+      "team": "Below Me",
+      "name": "Seattle Seahawks",
+      "pos": "DEF"
+    },
+    {
+      "round": 7,
+      "team": "Hairy Beavers",
+      "name": "Jakobi Meyers",
+      "pos": "WR"
+    },
+    {
+      "round": 7,
       "team": "IT Militia",
+      "name": "Jacory Croskey-Merritt",
+      "pos": "RB"
+    },
+    {
+      "round": 7,
+      "team": "I Know What I Did",
       "name": "Jayden Reed",
       "pos": "WR"
     },
     {
       "round": 7,
-      "team": "I Know What I Did",
-      "name": "Jonathon Brooks",
-      "pos": "RB"
-    },
-    {
-      "round": 7,
-      "team": "Old No 7",
-      "name": "Jacory Croskey-Merritt",
-      "pos": "RB"
-    },
-    {
-      "round": 8,
       "team": "Old No 7",
       "name": "Brock Purdy",
       "pos": "QB"
     },
     {
       "round": 8,
-      "team": "I Know What I Did",
-      "name": "Denver Broncos",
-      "pos": "DEF"
-    },
-    {
-      "round": 8,
-      "team": "IT Militia",
+      "team": "Old No 7",
       "name": "Trevor Lawrence",
       "pos": "QB"
     },
     {
       "round": 8,
-      "team": "Hairy Beavers",
+      "team": "I Know What I Did",
+      "name": "Jonathon Brooks",
+      "pos": "RB"
+    },
+    {
+      "round": 8,
+      "team": "IT Militia",
       "name": "Xavier Worthy",
       "pos": "WR"
     },
     {
       "round": 8,
-      "team": "Below Me",
-      "name": "Deebo Samuel Sr.",
+      "team": "Hairy Beavers",
+      "name": "Matthew Golden",
       "pos": "WR"
     },
     {
       "round": 8,
-      "team": "Easy Money",
+      "team": "Below Me",
       "name": "Caleb Williams",
       "pos": "QB"
     },
     {
       "round": 8,
+      "team": "Easy Money",
+      "name": "Kyle Monangai",
+      "pos": "RB"
+    },
+    {
+      "round": 8,
       "team": "Just The Tip",
-      "name": "Matthew Golden",
-      "pos": "WR"
+      "name": "Denver Broncos",
+      "pos": "DEF"
     },
     {
       "round": 8,
@@ -651,146 +651,146 @@
     {
       "round": 8,
       "team": "Murphy's Law",
-      "name": "Kyle Monangai",
-      "pos": "RB"
-    },
-    {
-      "round": 8,
-      "team": "Chili Dogs",
-      "name": "Stefon Diggs",
+      "name": "Deebo Samuel Sr.",
       "pos": "WR"
     },
     {
-      "round": 9,
+      "round": 8,
       "team": "Chili Dogs",
       "name": "Jordan Mason",
       "pos": "RB"
     },
     {
       "round": 9,
-      "team": "Murphy's Law",
-      "name": "Josh Downs",
-      "pos": "WR"
-    },
-    {
-      "round": 9,
-      "team": "Those Bastards",
-      "name": "Houston Texans",
-      "pos": "DEF"
-    },
-    {
-      "round": 9,
-      "team": "Just The Tip",
+      "team": "Chili Dogs",
       "name": "Dallas Goedert",
       "pos": "TE"
     },
     {
       "round": 9,
-      "team": "Easy Money",
-      "name": "Jared Goff",
-      "pos": "QB"
-    },
-    {
-      "round": 9,
-      "team": "Below Me",
-      "name": "Patrick Mahomes",
-      "pos": "QB"
-    },
-    {
-      "round": 9,
-      "team": "Hairy Beavers",
-      "name": "Romeo Doubs",
-      "pos": "WR"
-    },
-    {
-      "round": 9,
-      "team": "IT Militia",
+      "team": "Murphy's Law",
       "name": "Harold Fannin Jr.",
       "pos": "TE"
     },
     {
       "round": 9,
-      "team": "I Know What I Did",
+      "team": "Those Bastards",
+      "name": "Stefon Diggs",
+      "pos": "WR"
+    },
+    {
+      "round": 9,
+      "team": "Just The Tip",
+      "name": "Romeo Doubs",
+      "pos": "WR"
+    },
+    {
+      "round": 9,
+      "team": "Easy Money",
+      "name": "Blake Corum",
+      "pos": "RB"
+    },
+    {
+      "round": 9,
+      "team": "Below Me",
+      "name": "Josh Downs",
+      "pos": "WR"
+    },
+    {
+      "round": 9,
+      "team": "Hairy Beavers",
+      "name": "Houston Texans",
+      "pos": "DEF"
+    },
+    {
+      "round": 9,
+      "team": "IT Militia",
       "name": "Wan'Dale Robinson",
       "pos": "WR"
     },
     {
       "round": 9,
-      "team": "Old No 7",
-      "name": "Makai Lemon",
-      "pos": "WR"
-    },
-    {
-      "round": 10,
-      "team": "Old No 7",
-      "name": "Blake Corum",
-      "pos": "RB"
-    },
-    {
-      "round": 10,
       "team": "I Know What I Did",
-      "name": "Justin Herbert",
+      "name": "Patrick Mahomes",
+      "pos": "QB"
+    },
+    {
+      "round": 9,
+      "team": "Old No 7",
+      "name": "Jared Goff",
       "pos": "QB"
     },
     {
       "round": 10,
-      "team": "IT Militia",
-      "name": "Khalil Shakir",
-      "pos": "WR"
-    },
-    {
-      "round": 10,
-      "team": "Hairy Beavers",
-      "name": "Los Angeles Rams",
-      "pos": "DEF"
-    },
-    {
-      "round": 10,
-      "team": "Below Me",
-      "name": "Aaron Jones Sr.",
-      "pos": "RB"
-    },
-    {
-      "round": 10,
-      "team": "Easy Money",
-      "name": "Rashid Shaheed",
-      "pos": "WR"
-    },
-    {
-      "round": 10,
-      "team": "Just The Tip",
-      "name": "Jaxson Dart",
-      "pos": "QB"
-    },
-    {
-      "round": 10,
-      "team": "Those Bastards",
+      "team": "Old No 7",
       "name": "RJ Harvey",
       "pos": "RB"
     },
     {
       "round": 10,
-      "team": "Murphy's Law",
-      "name": "KC Concepcion",
+      "team": "I Know What I Did",
+      "name": "Kyle Pitts Sr.",
+      "pos": "TE"
+    },
+    {
+      "round": 10,
+      "team": "IT Militia",
+      "name": "Justin Herbert",
+      "pos": "QB"
+    },
+    {
+      "round": 10,
+      "team": "Hairy Beavers",
+      "name": "Rashid Shaheed",
       "pos": "WR"
     },
     {
       "round": 10,
-      "team": "Chili Dogs",
-      "name": "Bo Nix",
+      "team": "Below Me",
+      "name": "Los Angeles Rams",
+      "pos": "DEF"
+    },
+    {
+      "round": 10,
+      "team": "Easy Money",
+      "name": "Jaxson Dart",
       "pos": "QB"
+    },
+    {
+      "round": 10,
+      "team": "Just The Tip",
+      "name": "Makai Lemon",
+      "pos": "WR"
+    },
+    {
+      "round": 10,
+      "team": "Those Bastards",
+      "name": "Jalen Coker",
+      "pos": "WR"
+    },
+    {
+      "round": 10,
+      "team": "Murphy's Law",
+      "name": "Minnesota Vikings",
+      "pos": "DEF"
+    },
+    {
+      "round": 10,
+      "team": "Chili Dogs",
+      "name": "Khalil Shakir",
+      "pos": "WR"
     },
     {
       "round": 11,
       "team": "Chili Dogs",
-      "name": "Minnesota Vikings",
+      "name": "Detroit Lions",
       "pos": "DEF"
     },
     {
       "round": 11,
       "team": "Murphy's Law",
-      "name": "Detroit Lions",
-      "pos": "DEF"
+      "name": "Bo Nix",
+      "pos": "QB"
     },
     {
       "round": 11,
@@ -801,26 +801,26 @@
     {
       "round": 11,
       "team": "Just The Tip",
+      "name": "Aaron Jones Sr.",
+      "pos": "RB"
+    },
+    {
+      "round": 11,
+      "team": "Easy Money",
       "name": "Brandon Aubrey",
       "pos": "K"
     },
     {
       "round": 11,
-      "team": "Easy Money",
-      "name": "Kyle Pitts Sr.",
+      "team": "Below Me",
+      "name": "Mark Andrews",
       "pos": "TE"
     },
     {
       "round": 11,
-      "team": "Below Me",
-      "name": "New England Patriots",
-      "pos": "DEF"
-    },
-    {
-      "round": 11,
       "team": "Hairy Beavers",
-      "name": "Ka'imi Fairbairn",
-      "pos": "K"
+      "name": "KC Concepcion",
+      "pos": "WR"
     },
     {
       "round": 11,
@@ -831,38 +831,38 @@
     {
       "round": 11,
       "team": "I Know What I Did",
-      "name": "George Kittle",
-      "pos": "TE"
+      "name": "New England Patriots",
+      "pos": "DEF"
     },
     {
       "round": 11,
+      "team": "Old No 7",
+      "name": "Ka'imi Fairbairn",
+      "pos": "K"
+    },
+    {
+      "round": 12,
       "team": "Old No 7",
       "name": "Pittsburgh Steelers",
       "pos": "DEF"
     },
     {
       "round": 12,
-      "team": "Old No 7",
+      "team": "I Know What I Did",
       "name": "Cameron Dicker",
       "pos": "K"
     },
     {
       "round": 12,
-      "team": "I Know What I Did",
+      "team": "IT Militia",
       "name": "Harrison Mevis",
       "pos": "K"
     },
     {
       "round": 12,
-      "team": "IT Militia",
+      "team": "Hairy Beavers",
       "name": "Jake Bates",
       "pos": "K"
-    },
-    {
-      "round": 12,
-      "team": "Hairy Beavers",
-      "name": "Baker Mayfield",
-      "pos": "QB"
     },
     {
       "round": 12,
@@ -873,25 +873,25 @@
     {
       "round": 12,
       "team": "Easy Money",
-      "name": "Cam Little",
-      "pos": "K"
-    },
-    {
-      "round": 12,
-      "team": "Just The Tip",
       "name": "Los Angeles Chargers",
       "pos": "DEF"
     },
     {
       "round": 12,
+      "team": "Just The Tip",
+      "name": "Chase McLaughlin",
+      "pos": "K"
+    },
+    {
+      "round": 12,
       "team": "Those Bastards",
-      "name": "Tyler Shough",
-      "pos": "QB"
+      "name": "Jacksonville Jaguars",
+      "pos": "DEF"
     },
     {
       "round": 12,
       "team": "Murphy's Law",
-      "name": "Chase McLaughlin",
+      "name": "Cam Little",
       "pos": "K"
     },
     {

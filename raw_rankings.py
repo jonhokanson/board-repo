@@ -112,8 +112,28 @@ Jake Haener - NYG
 Carson Wentz - MIN
 Cooper Rush - ATL
 Kyle Trask - CAR
+Jack Strand - ATL
+Joe Fagnano - BAL
+Austin Reed - BAL
+Haynes King - CAR
+Miller Moss - CHI
+Kedon Slovis - ARI
+Brett Rypien - HOU
+Carter Bradley - JAX
+Joey Aguilar - JAX
+Jacob Clark - LV
+DJ Uiagalelei - LAC
+Matthew Caldwell - LAR
+Mark Gronowski - MIA
+Hunter Dekkers - NO
+Connor Bazelak - TB
 """
 
+# The following 15 entries were added 2026-08-30 during the same active-
+# roster completeness pass as the WR list (see WR_RANKS below) -- camp-
+# battle winners and depth arms a fantasy-relevant source naturally skips.
+# Sequential ranks here (QB107+) are not a scouted order, just "comes
+# after the real rankings."
 RB_RANKS = """
 Jahmyr Gibbs - DET
 Bijan Robinson - ATL
@@ -245,8 +265,95 @@ Damien Martinez - GB
 Max Bredeson - MIN
 British Brooks - HOU
 Reggie Gilliam - NE
+Trey Benson - ARI
+Evan Hull - ARI
+Corey Kiner - ARI
+Bam Knight - ARI
+Tre Stewart - ARI
+Tyler Goodson - ATL
+Cash Jones - ATL
+Trey Sermon - ATL
+Dontae McMillan - BAL
+Elijah Tau-Tolliver - BAL
+Jonathan Ward - BAL
+Jackson Acker - BUF
+Ben VanSumeren - BUF
+Ian Wheeler - BUF
+Miles Davis - CAR
+Anthony Tyus III - CAR
+Gary Brightwell - CIN
+Kentrel Bullock - CIN
+Kendall Milton - CIN
+Davon Booth - CLE
+Ahmani Marshall - CLE
+Israel Abanikanda - DAL
+Jashaun Corbin - DAL
+Tyler Badie - DEN
+Jaleel McLaughlin - DEN
+Cody Schrader - DEN
+Jacob Saylors - DET
+Jabari Small - DET
+Sione Vaki - DET
+Roydell Williams - DET
+Pierre Strong Jr. - GB
+Jaden Nixon - GB
+Derek Parish - HOU
+Noah Whittington - HOU
+Owen Wright - HOU
+Ulysses Bentley IV - IND
+Anderson Castle - IND
+DeeJay Dallas - JAX
+EJ Smith - KC
+Dylan Laube - LV
+Dare Ogunbowale - LV
+Roman Hemby - LV
+Gregory Desrosiers Jr. - LAC
+Amar Johnson - LAC
+Ronnie Rivers - LAR
+Jordan Waters - LAR
+Coleman Bennett - MIA
+DJ Herman - MIA
+Jarquez Hunter - MIA
+Jermar Jefferson - MIN
+Hassan Haskins - NE
+JaMycal Hasty - NE
+Lan Larison - NE
+Ty Chandler - NO
+CJ Donaldson - NO
+Audric Estime - NO
+Zamir White - NO
+Damon Bankston - NYG
+Eric Gray - NYG
+Grant Finley - NYG
+Kene Nwangwu - NYJ
+Dominic Richardson - NYJ
+Chip Trayanum - NYJ
+Jordan Mims - PHI
+Carson Steele - PHI
+Max Hurleman - PIT
+Lew Nichols III - PIT
+Alex Tecza - PIT
+Khalil Herbert - SF
+Sincere McCormick - SF
+Justin Jones - SEA
+Jacardia Wright - SEA
+Brock Lampe - SEA
+Brady Russell - SEA
+Josh Williams - TB
+Barika Kpeenu - TB
+Michael Carter - TEN
+Julius Chestnut - TEN
+D'Ernest Johnson - TEN
+Kalel Mullings - TEN
+Robert Henry Jr. - WAS
+Craig Reynolds - WAS
 """
 
+# The following 82 entries were added 2026-08-30 during the same active-
+# roster completeness pass as the WR list below -- camp-battle winners,
+# UDFA depth, and trade/waiver pickups a fantasy-relevant source naturally
+# skips. Sequential ranks here (RB131+) are not a scouted order, just
+# "comes after the real rankings."
 # The final 237 entries (after "Treylon Burks - WAS") were added 2026-08-29,
 # mid-draft-day, extending WR coverage beyond fantasyfootballcalculator.com's
 # fantasy-relevant top-130 to every rosterable WR across all 32 teams
@@ -757,8 +864,87 @@ Zaire Mitchell-Paden - NO
 Ben Yurosek - MIN
 Nikola Kalinic - CHI
 Kylen Granson - TEN
+Rivaldo Fairweather - ARI
+Jameson Geers - ARI
+Shawn Bowman - ARI
+Nick Muse - ATL
+Joshua Simon - ATL
+Jack Velling - ATL
+Ty Pezza - BAL
+Feleipe Franks - CAR
+Caden Prieskorn - CAR
+Stephen Carlson - CHI
+Qadir Ismail - CHI
+Hayden Large - CHI
+Josh Kattus - CIN
+Princeton Fant - DAL
+DJ Rogers - DAL
+Caleb Lohner - DEN
+Thomas Gordon - DET
+Zach Horton - DET
+McCallan Castles - GB
+Jonnu Smith - GB
+Messiah Swinson - GB
+Thomas Yassmin - GB
+Louis Hansen - HOU
+Brevin Jordan - HOU
+Layne Pryor - HOU
+Pharaoh Brown - IND
+JJ Galbreath - IND
+Tyler Moore - IND
+Carson Towt - IND
+Patrick Herbert - JAX
+Quintin Morris - JAX
+Jake Briningstool - KC
+Mason Pline - KC
+Tre Watson - KC
+Patrick Gurd - LV
+Albert Okwuegbunam - LV
+Carter Runyon - LV
+Jerand Bradley - LAC
+Johnny Pascuzzi - LAC
+Evan Svoboda - LAC
+Rohan Jones - LAR
+Mark Redman - LAR
+Dan Villari - LAR
+Jeremiah Franklin - MIA
+Cole Turner - MIA
+Gavin Bartholomew - MIN
+Bryson Nesbit - MIN
+Marshall Lang - MIN
+Matt Lauter - MIN
+Tanner Arkin - NE
+Jack Westover - NE
+Julian Hill - NE
+Cody Hardy - NO
+Treyton Welch - NO
+Josiah Deguara - NYG
+Thomas Fidone II - NYG
+Chase Curtis - NYJ
+Connor Hulstein - NYJ
+E.J. Jenkins - PHI
+Lance Mason - PIT
+Lake McRee - PIT
+Robert Tonyan - PIT
+Khalil Dinkins - SF
+Brayden Willis - SF
+Nick Kallerup - SEA
+Kenny Fletcher Jr. - TB
+Bauer Sharp - TB
+David Martin-Robinson - TEN
+Jaren Kanak - TEN
+Joel Wilson - TEN
+Lawrence Cager - WAS
+Tre' McKitty - WAS
+Quentin Moore - WAS
+Colson Yankoff - WAS
 """
 
+# The following 74 entries were added 2026-08-30 during the same active-
+# roster completeness pass as the WR list above -- notable signings
+# (Jonnu Smith, Josiah Deguara) plus 3rd/4th/5th-string depth a fantasy-
+# relevant source naturally skips. Sequential ranks here (TE131+) are not
+# a scouted order, just "comes after the real rankings."
 K_RANKS = """
 Brandon Aubrey - DAL
 Jason Myers - SEA
