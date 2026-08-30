@@ -841,6 +841,12 @@
       "team": "Hairy Beavers",
       "name": "Minnesota Vikings",
       "pos": "DEF"
+    },
+    {
+      "round": 11,
+      "team": "IT Militia",
+      "name": "Stefon Diggs",
+      "pos": "WR"
     }
   ]
 }
