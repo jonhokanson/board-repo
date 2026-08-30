@@ -655,6 +655,12 @@
       "team": "Easy Money",
       "name": "Denver Broncos",
       "pos": "DEF"
+    },
+    {
+      "round": 8,
+      "team": "Just The Tip",
+      "name": "Los Angeles Rams",
+      "pos": "DEF"
     }
   ]
 }
