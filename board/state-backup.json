@@ -787,6 +787,12 @@
       "team": "Those Bastards",
       "name": "Michael Pittman Jr.",
       "pos": "WR"
+    },
+    {
+      "round": 10,
+      "team": "Murphy's Law",
+      "name": "Dallas Goedert",
+      "pos": "TE"
     }
   ]
 }
