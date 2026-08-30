@@ -661,6 +661,12 @@
       "team": "Just The Tip",
       "name": "Los Angeles Rams",
       "pos": "DEF"
+    },
+    {
+      "round": 8,
+      "team": "Those Bastards",
+      "name": "Jacory Croskey-Merritt",
+      "pos": "RB"
     }
   ]
 }
