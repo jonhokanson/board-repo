@@ -907,6 +907,12 @@
       "team": "Those Bastards",
       "name": "Los Angeles Chargers",
       "pos": "DEF"
+    },
+    {
+      "round": 12,
+      "team": "Murphy's Law",
+      "name": "Detroit Lions",
+      "pos": "DEF"
     }
   ]
 }
