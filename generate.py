@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # landed. Scheme: v0.MAJOR.MINOR.PATCH -- bump PATCH (last digit) on routine
 # commits, bump MINOR (third digit, reset PATCH to 0) on a notable feature or
 # milestone. Bump this by hand alongside any change worth shipping.
-APP_VERSION = "0.2.12.0"
+APP_VERSION = "0.2.12.1"
 
 # This season's draft year -- used to work out "reigning champion" / "last
 # season's toilet" / drought lengths against LEAGUE_CHAMPIONSHIPS and
@@ -1057,6 +1057,8 @@ def render_draft_board(derived, state):
   .pick-player.pending {{ font-style:italic; }}
   .pick-bye {{ position:absolute; top:6px; right:8px; font-size:9.5px; font-weight:700; color:var(--text-dim); }}
   .pos-filled .pick-bye {{ color:rgba(11,15,20,.55); }}
+  .pick-meta {{ font-size:9.5px; font-weight:600; color:var(--text-dim); margin-top:3px; }}
+  .pos-filled .pick-meta {{ color:rgba(11,15,20,.55); }}
   .legend {{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }}
   .legend-item {{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }}
   .legend .dot {{ width:9px; height:9px; border-radius:50%; display:inline-block; }}
@@ -1113,7 +1115,10 @@ function cellInner(label, entry) {{
   const filled = entry && entry.name;
   const bye = filled && entry.nflTeam ? TEAM_BYE[entry.nflTeam] : null;
   const byeBadge = bye ? `<div class="pick-bye">Bye ${{bye}}</div>` : '';
-  return `${{byeBadge}}<div class="pick-num">${{label}}</div><div class="pick-player${{filled ? ' filled' : ' pending'}}">${{filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}}</div>`;
+  const meta = filled && (entry.pos || entry.nflTeam)
+    ? `<div class="pick-meta">${{entry.pos || ''}}${{entry.pos && entry.nflTeam ? ' &middot; ' : ''}}${{entry.nflTeam || ''}}</div>`
+    : '';
+  return `${{byeBadge}}<div class="pick-num">${{label}}</div><div class="pick-player${{filled ? ' filled' : ' pending'}}">${{filled ? entry.name : (label.startsWith('#') ? '&mdash;' : 'Pending')}}</div>${{meta}}`;
 }}
 
 function applyPosStyle(td, entry) {{

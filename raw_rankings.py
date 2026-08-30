@@ -363,6 +363,14 @@ Craig Reynolds - WAS
 # sequential ranks (WR131+) purely as a side effect of parse_ranked_block()'s
 # enumerate(); that is NOT a scouted/ordered rank, just "comes after the real
 # rankings." Don't be surprised these ranks don't mean anything meaningful.
+#
+# One deliberate exception to "active roster only": Tyreek Hill (added to
+# the very end of this block, 2026-08-30) is a free agent as of this
+# writing, unsigned while recovering from injury -- not on any team. Jon
+# asked for him specifically despite that, since he's a real player worth
+# tracking/watchlisting for a keeper league even without a current team.
+# His nflTeam is the literal string "Free Agent" (not a TEAM_ABBR2 code) so
+# it displays as-is and correctly produces no bye-week badge.
 WR_RANKS = """
 Puka Nacua - LAR
 Ja'Marr Chase - CIN
@@ -731,6 +739,7 @@ Jacoby Jones - WAS
 Van Jefferson - WAS
 Jaylin Lane - WAS
 Nick Nash - WAS
+Tyreek Hill - Free Agent
 """
 
 TE_RANKS = """
