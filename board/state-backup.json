@@ -769,6 +769,12 @@
       "team": "Below Me",
       "name": "Pittsburgh Steelers",
       "pos": "DEF"
+    },
+    {
+      "round": 10,
+      "team": "Easy Money",
+      "name": "Bo Nix",
+      "pos": "QB"
     }
   ]
 }
