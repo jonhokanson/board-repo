@@ -835,6 +835,12 @@
       "team": "Below Me",
       "name": "Patrick Mahomes",
       "pos": "QB"
+    },
+    {
+      "round": 11,
+      "team": "Hairy Beavers",
+      "name": "Minnesota Vikings",
+      "pos": "DEF"
     }
   ]
 }
